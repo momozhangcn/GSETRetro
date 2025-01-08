@@ -1,6 +1,6 @@
-# GSETransformer
+# GSETRetro
 ## 0. Requirements
-Create a virtual environment and install the dependencies to run the code of GSETransformer.<br>
+Create a virtual environment and install the dependencies.<br>
 Install pytorch with the cuda version that fits your device.<br>
 ```
 conda create -n yourenv python=3.7

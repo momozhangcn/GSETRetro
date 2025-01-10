@@ -11,6 +11,7 @@ pip install torchtext==0.6.0 torch_geometric==2.3.1 configargparse tensorboardX=
 ```
 ## 1. Data and Checkpoints
 ## 2. Single-step Model Traning and Evaluation
+cd /GSETransformer
 ### (2.1)To preprocess the data:
 ```
 python preprocess.py -train_src data/biochem_npl_20xaug/src-train.txt -train_tgt data/biochem_npl_20xaug/tgt-train.txt \
@@ -39,24 +40,24 @@ python  train.py -data  data/biochem_npl_20xaug/biochem_npl_20xaug \
                  -self_attn_type scaled-dot -max_relative_positions 4 \
                  -heads 8 -transformer_ff 2048  -early_stopping 40 -keep_checkpoint 10 \
                  -tensorboard -tensorboard_log_dir runs/biochem_npl_20xaug 2>&1 | tee runs/biochem_npl_20xaug.log
-```   
-### (2.3) To generate prediction and test the output results:
+```
+### (2.3) To generate prediction and score the output results:
 ```
 CUDA_VISIBLE_DEVICES=${gpu_id}   \
-python translate.py -model experiments/biochem_npl_20xaug/model_best_acc_step_355000.pt   \
+python translate_with_src_aug.py -model experiments/biochem_npl_20xaug/model_best_acc_step_355000.pt   \
                     -src data/biochem_npl_20xaug/src-test.txt -tgt data/biochem_npl_20xaug/tgt-test.txt \
-                    -output data/biochem_npl_20xaug/pred_model_best_acc_step_355000_n10b10.txt -replace_unk  -gpu 0  -beam_size 10 -n_best 10
+                    -output data/biochem_npl_20xaug/pred.txt -replace_unk  -gpu 0  -beam_size 10 -n_best 10
 ```
-noted that the hyper-parameter for USPTO-50k: -beam_size 50 -n_best 10 </br>
-if opt.tgt above is given, script will do test the output results automatically
+Noted that the hyper-parameter for USPTO-50k: -beam_size 50 -n_best 10 </br>
+if opt.tgt above is given, script will do score the output results automatically.
 
 ## 3.Multi-step Planning and Evaluation
-### (3.1) Planning
+### (3.1) To Plan retrosynthetic routes
 Run the following command to plan paths of multiple products using multiprocessing:
 ```
 CUDA_VISIBLE_DEVICES=${gpu_id} python run_mp.py
 ```
-### (3.2) Evaluation
+### (3.2) To evaluate the result of the previous step
 Run the following command to evaluate the planned paths of the test molecules:
 ```
 python eval.py ${save_file}

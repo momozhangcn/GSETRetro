@@ -20,10 +20,13 @@ from onmt.modules.copy_generator import collapse_copy_scores
 from tqdm import tqdm
 
 def build_translator(opt, report_score=True, logger=None, out_file=None):
-    if out_file is None:
+    
+    if out_file is None and not opt.multi_step:
         out_file = codecs.open(opt.output, 'w+', 'utf-8')
-    else:
+    elif out_file is not None :
         out_file = codecs.open(out_file, 'w+', 'utf-8')
+    else:
+        out_file = codecs.open('temp.txt', 'w+', 'utf-8')
 
 
     load_test_model = onmt.decoders.ensemble.load_test_model \
@@ -724,9 +727,9 @@ class Translator(object):
         for i in range(len(results["predictions"])):
             got_n = len(results["predictions"][i])
             if got_n < n_best:
-                pad_pred_tensor = torch.tensor([4], device=mb_device)    # pad 'C' as output
+                pad_pred_tensor = torch.tensor([4],device=mb_device)    # pad 'C' as output
                 results["predictions"][i].extend([pad_pred_tensor for pad_n in range(n_best-got_n)])
-                results["scores"][i].extend([torch.tensor(-got_n-pad_n-1, device=mb_device, dtype=torch.float)
+                results["scores"][i].extend([torch.tensor(-got_n-pad_n-1,device=mb_device, dtype=torch.float) 
                                              for pad_n in range(n_best-got_n)])
                 results["attention"][i].extend([[] for _ in range(n_best-got_n)])
         return results

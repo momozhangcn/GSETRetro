@@ -4,7 +4,6 @@
 from __future__ import unicode_literals
 import os
 import sys
-# what if not add
 
 root = os.path.abspath('.')
 if root not in sys.path:
@@ -12,21 +11,14 @@ if root not in sys.path:
 elif os.path.dirname(__file__) not in sys.path:
     sys.path.append(os.path.dirname(__file__))
 
-
-#print(sys.path.append(os.path.dirname(__file__)))
-
-from itertools import repeat
 try:
     from .data_utils.generate_edge_index import get_single_edge_index
-    from .data_utils.src_aug_res_rerank import atom_map_src_smi, atom_mapped_src_aug, compute_rank_rerank
+    from .data_utils.src_aug_res_rerank import \
+        atom_map_src_smi, atom_mapped_src_aug, compute_rank_rerank, smi_tokenizer, canonicalize_smiles
 except:
     from data_utils.generate_edge_index import get_single_edge_index
-    from data_utils.src_aug_res_rerank import atom_map_src_smi, atom_mapped_src_aug, compute_rank_rerank
-from rdkit import Chem
-#
-
-
-
+    from data_utils.src_aug_res_rerank import \
+        atom_map_src_smi, atom_mapped_src_aug, compute_rank_rerank, smi_tokenizer, canonicalize_smiles
 
 from onmt.utils.logging import init_logger
 #from custom_onmt.utils.misc import split_corpus
@@ -35,106 +27,7 @@ from onmt.translate.translator import build_translator
 import onmt.opts as opts
 from onmt.utils.parse import ArgumentParser
 import numpy as np
-from time import time
-import re
-#export PATH=$PATH:/data/zhangmeng/GSETRetro-main/GSETransformer/onmt
 
-
-
-def smi_tokenizer(smi):
-    pattern = "(\[[^\]]+]|Br?|Cl?|N|O|S|P|F|I|b|c|n|o|s|p|\(|\)|\.|=|#|-|\+|\\\\|\/|:|~|@|\?|>|\*|\$|\%[0-9]{2}|[0-9])"
-    regex = re.compile(pattern)
-    tokens = [token for token in regex.findall(smi)]
-    assert smi == ''.join(tokens)
-    return ' '.join(tokens)
-
-def cano_smiles(smiles):
-    try:
-        tmp = Chem.MolFromSmiles(smiles)
-        if tmp is None:
-            return tmp, None
-        tmp = Chem.RemoveHs(tmp)
-        if tmp is None:
-            return tmp, None
-        [a.ClearProp('molAtomMapNumber') for a in tmp.GetAtoms()]
-    except:
-        return None, None
-    return tmp, Chem.MolToSmiles(tmp)
-
-
-def filter_invalid(generations, scores):
-    filtered_generations, filtered_scores = [], []
-    for generation, score in zip(generations, scores):
-        mol = Chem.MolFromSmiles(generation)
-        if mol is None:
-            continue
-        filtered_generations.append(Chem.MolToSmiles(mol, canonical=True))
-        filtered_scores.append(score)
-
-    return filtered_generations, filtered_scores
-
-
-def filter_single_atom(generations):
-    filtered_generations = []
-    for generation in generations:
-        filtered_generations.append('.'.join([smi for smi in generation.split('.') if len(smi) > 1]))
-
-    return filtered_generations
-
-def canon_smi_2set(smiles_list=None):
-    """Return the canonicalized version of the given smiles or smiles list"""
-    new_smiles_list = []
-    for smiles in smiles_list:
-        mol = Chem.MolFromSmiles(smiles)
-        if mol is not None:
-            try:
-                smi = Chem.MolToSmiles(mol, isomericSmiles=True, canonical=True)
-            except:
-                return False, smiles_list
-            else:
-                new_smiles_list.append(smi)
-        else:
-            return False, smiles_list
-    return True, new_smiles_list
-
-def canonicalize_smiles(smiles):
-    smiles = smiles.strip().replace(' ', '')
-    try:
-        mol = Chem.MolFromSmiles(smiles)
-    except:
-        return ''
-    else:
-        if mol is not None:
-            [atom.ClearProp('molAtomMapNumber') for atom in mol.GetAtoms() if atom.HasProp('molAtomMapNumber')]
-            try:
-                smi = Chem.MolToSmiles(mol, isomericSmiles=True, canonical=True)
-            except:
-                return ''
-            else:
-                return smi
-        else:
-            return ''
-
-def translate(opt):
-
-
-    ArgumentParser.validate_translate_opts(opt)
-    logger = init_logger(opt.log_file)
-
-    translator = build_translator(opt, report_score=True)  # change
-    src_shards = opt.src
-    edge_index_shards = [get_single_edge_index(smi) for smi in opt.src]
-
-
-    all_scores, all_predictions = translator.translate(
-        src=src_shards,
-        tgt=None,
-        src_dir=opt.src_dir,
-        batch_size=opt.batch_size,
-        attn_debug=opt.attn_debug,
-        edge_index=edge_index_shards,
-    )  # add
-    return all_scores, all_predictions
 
 def _get_parser():
     parser = ArgumentParser(description='translate.py')
@@ -143,15 +36,18 @@ def _get_parser():
     opts.translate_opts(parser)
     return parser
 
-def prepare_GSET_translator(model_path,  beam, expansion_topk, device):
+def prepare_GSET_translator(model_path,  beam, expansion_topk, device_bool):
     parser = _get_parser()
     opt = parser.parse_args()
 
     if isinstance(model_path, str):
         model_path = [model_path]
     opt.models = model_path
-    if device == 'cuda':
-        opt.gpu = 0
+    opt.gpu = device_bool-1
+    # if device == 0:
+    #     opt.gpu = -1
+    # elif device == 1:
+    #     opt.gpu = 0
     opt.beam = beam
     opt.n_best = beam
     #opt.batch_size = 1

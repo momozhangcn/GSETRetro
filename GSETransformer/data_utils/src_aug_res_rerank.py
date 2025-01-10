@@ -164,6 +164,7 @@ def compute_rank_rerank(prediction,beam_size, raw=False,alpha=1.0):
         rank = list(zip(rank.keys(), rank.values()))
         rank.sort(key=lambda x: x[1], reverse=True)
         rank = rank[:beam_size]
+        
 
     rank_pred = [r[0] for r in rank]
     rank_score = [r[1] for r in rank]
@@ -172,17 +173,23 @@ def compute_rank_rerank(prediction,beam_size, raw=False,alpha=1.0):
     return rank_pred, rank_score
 
 def canonicalize_smiles(smiles):
-    mol = Chem.MolFromSmiles(smiles)
-    if mol is not None:
-        [atom.ClearProp('molAtomMapNumber') for atom in mol.GetAtoms() if atom.HasProp('molAtomMapNumber')]
-        try:
-            smi = Chem.MolToSmiles(mol, isomericSmiles=True)
-        except:
-            return ''
-        else:
-            return smi
-    else:
+    smiles = smiles.strip().replace(' ', '')
+    try:
+        mol = Chem.MolFromSmiles(smiles)
+    except:
         return ''
+    else:
+        if mol is not None:
+            [atom.ClearProp('molAtomMapNumber') for atom in mol.GetAtoms() if atom.HasProp('molAtomMapNumber')]
+            try:
+                smi = Chem.MolToSmiles(mol, isomericSmiles=True, canonical=True)
+            except:
+                return ''
+            else:
+                return smi
+        else:
+            return ''
+
 if __name__ == "__main__":
     smi = 'C=CC(C)(C)[C@@]12C[C@H]3c4nc5ccccc5c(=O)n4[C@H](C)C(=O)N3C1N(C(C)=O)c1ccccc12'.replace(' ', '')
     # step_01 do atom map for src smi

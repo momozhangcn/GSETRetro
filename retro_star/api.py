@@ -1,13 +1,10 @@
 import torch
+import os
 import pandas as pd
 from retro_star.common import prepare_starting_molecules, \
      prepare_molstar_planner, smiles_to_fp
 from retro_star.model import ValueMLP
 from retro_star.utils import setup_logger
-# from g2s.translate import prepare_g2s, run_g2s
-# from retroformer.translate import prepare_retroformer, run_retroformer
-
-# from utils.ensemble import prepare_ensemble, run_ensemble
 
 # from retro_star.retriever import Retriever, run_retriever, run_retriever_only, \
 #     neutralize_atoms, kegg_search, \
@@ -17,6 +14,7 @@ from rdkit import Chem
 import random
 
 class RSPlanner:
+    dir_name = os.path.dirname(__file__)
     def __init__(self,
                  cuda=True,
                  beam_size=10,
@@ -24,7 +22,7 @@ class RSPlanner:
                  expansion_topk=10,
                  use_value_fn=True,
                  starting_molecules='data/building_block.csv',
-                 value_model='retro_star/saved_model/best_epoch_final_4.pt',
+                 value_model=f'{dir_name}/saved_model/best_epoch_final_4.pt',
                  model_type='ensemble',
                  model_path=None,
                  retrieval_db='data/train_canonicalized.txt',
@@ -34,9 +32,10 @@ class RSPlanner:
                  retrieval=True,
                  path_retrieval=True,
                  seed=3435):
-        
+
         setup_logger()
         device = torch.device('cuda' if cuda else 'cpu')
+        device_bool = cuda
         random.seed(seed)
         torch.manual_seed(seed)
 
@@ -92,7 +91,7 @@ class RSPlanner:
 
         elif model_type == 'GSETransformer':
             from GSETransformer.translate_multi_step import prepare_GSET_translator, run_GSET_translate
-            translator, opt = prepare_GSET_translator(gset_model_path,  beam_size, expansion_topk, device)
+            translator, opt = prepare_GSET_translator(gset_model_path,  beam_size, expansion_topk, device_bool)
             expansion_handler = lambda x: run_GSET_translate(x, translator, opt)
 
         elif not path_retrieval and retrieval:  # READRetro

@@ -34,10 +34,10 @@ def main(opt):
     translator = build_translator(opt, report_score=True)  # change
     with open(opt.src, 'r') as f_src_in, open(opt.output, 'w',encoding="utf-8") as f_pred_out:
         src_all = f_src_in.readlines()
+        src_aug_time = opt.src_aug_time
         for src in tqdm(src_all):
             src = smi_tokenizer(src.strip().replace(' ', ''))
-
-            src_aug_time = 10
+            
             if src_aug_time > 1:
                 # step_01, do atom map for src smi
                 mapped_src_smi = atom_map_src_smi(src)
@@ -69,8 +69,8 @@ def main(opt):
                 rank_pred, rank_score = compute_rank_rerank(all_predictions_cano, opt.n_best) 
                 cano_preds = rank_pred
                 
-                if len(rank_pred) <10:
-                    print(rank_pred)
+                if len(rank_pred) < opt.n_best:
+                    rank_pred.extend(['C' for i in range(opt.n_best-len(rank_pred))])
                 scores_cano = list(np.exp(rank_score))
                 sum_scores = sum(scores_cano)
                 cano_scores = [score / sum_scores for score in scores_cano]
@@ -80,9 +80,9 @@ def main(opt):
                 all_predictions = all_predictions[0]
 
                 all_predictions_cano = [canonicalize_smiles(smi) for smi in all_predictions]
+                
                 scores = [float(each) for each in all_scores]
                 all_scores_cano = list(np.exp(scores))
-                print(all_predictions_cano)
                 cano_preds = all_predictions_cano[:opt.n_best]
                 sum_scores = sum(all_scores_cano)
                 cano_scores = [score / sum_scores for score in all_scores_cano][:opt.n_best]

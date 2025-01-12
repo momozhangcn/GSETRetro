@@ -694,7 +694,7 @@ def translate_opts(parser):
     group = parser.add_argument_group('Efficiency')
     group.add('--batch_size', '-batch_size', type=int, default=64,
               help='Batch size')
-    group.add('--gpu', '-gpu', type=int, default=0,
+    group.add('--gpu', '-gpu', type=int, default=-1,
               help="Device to run on")
 
     # Options most relevant to speech.
@@ -715,6 +715,8 @@ def translate_opts(parser):
                    "model faster and smaller")
     group.add('--multi_step', '-multi_step', action="store_true",
               help='if multi_step,do not print translation process and info')
+    group.add('--src_aug_time', '-src_aug_time', type=int, default=1,
+              help='aug src input and then do inference, rerank the results finally')
 
 # Copyright 2016 The Chromium Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be

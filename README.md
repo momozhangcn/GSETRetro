@@ -11,22 +11,23 @@ pip install torchtext==0.6.0 torch_geometric==2.3.1 configargparse tensorboardX=
 ```
 ## 1. Data and Checkpoints
 The data and checkpoints used to reproduce the results of the paper can be accessed via the link: 
-https://drive.google.com/drive/folders/1tHuqdjdu2kxQChS2x-z1n3Hnhf-0rDBt
-- For the Biochem dataset
+https://drive.google.com/drive/folders/1tHuqdjdu2kxQChS2x-z1n3Hnhf-0rDBt 
+- For the Biochem dataset </br>
 The raw data is originally sourced from: https://github.com/zengtsysu/BioNavi </br>
 Further processed raw data used for this paper is obtained from: https://github.com/SeulLee05/READRetro </br>
-- For the USPTO-50K dataset
+- For the USPTO-50K dataset </br>
 The raw data is obtained from: https://github.com/Hanjun-Dai/GLN </br>
 The 20x augmented data is obtained from: https://github.com/otori-bird/retrosynthesis </br>
 ## 2. Single-step Model Traning and Evaluation
 cd /GSETransformer
-### (2.1)To preprocess the data:
+### (2.1)To preprocess the data used for traning:
 ```
 python preprocess.py -train_src data/biochem_npl_20xaug/src-train.txt -train_tgt data/biochem_npl_20xaug/tgt-train.txt \
                      -valid_src data/biochem_npl_20xaug/src-val.txt  -valid_tgt data/biochem_npl_20xaug/tgt-val.txt  \
                      -save_data data/biochem_npl_20xaug/biochem_npl_20xaug  \
                      -src_seq_length 1000 -tgt_seq_length 1000 -src_vocab_size 1000 -tgt_vocab_size 1000 -share_vocab
-``` 
+```
+It will generate one .pt file and one .pkl file each for the train and valid data. </br>
 ### (2.2)To train the model:
 ```
 CUDA_VISIBLE_DEVICES=${gpu_id}   \

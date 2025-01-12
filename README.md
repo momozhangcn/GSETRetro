@@ -11,23 +11,23 @@ pip install torchtext==0.6.0 torch_geometric==2.3.1 configargparse tensorboardX=
 ```
 ## 1. Data and Checkpoints
 The data and checkpoints used to reproduce the results of the paper can be accessed via the link: 
-https://drive.google.com/drive/folders/1tHuqdjdu2kxQChS2x-z1n3Hnhf-0rDBt 
+https://drive.google.com/drive/folders/1tHuqdjdu2kxQChS2x-z1n3Hnhf-0rDBt  </br>
 - For the Biochem dataset </br>
 The raw data is originally sourced from: https://github.com/zengtsysu/BioNavi </br>
 Further processed raw data used for this paper is obtained from: https://github.com/SeulLee05/READRetro </br>
 - For the USPTO-50K dataset </br>
 The raw data is obtained from: https://github.com/Hanjun-Dai/GLN </br>
 The 20x augmented data is obtained from: https://github.com/otori-bird/retrosynthesis </br>
-The directory structure is shown below, and the relevant files downloaded from the above link should be placed accordingly:
+- The directory structure is shown below, and the relevant files downloaded from the above link should be placed accordingly:
 ```
 GSETRetro
 ├───GSETransformer
 │   ├───data
 │   │   ├───biochem_npl_20xaug
-│   │   │  └───src-train.txt/tgt-train.txt/src-val.txt/tgt-val.txt …
+│   │   │  └───src-train.txt/tgt-train.txt/src-val.txt/tgt-val.txt/src-test.txt/tgt-test.txt …
 │   │   │
 │   │   └───uspto_50k_20xaug
-│   │       └───src-train.txt/tgt-train.txt/src-val.txt/tgt-val.txt …
+│   │       └───src-train.txt/tgt-train.txt/src-val.txt/tgt-val.txt/src-test.txt/tgt-test.txt …
 │   ├───experiments
 │   │    ├───biochem_npl_20xaug
 │   │    │   └───model_step_xx.pt
@@ -43,7 +43,7 @@ GSETRetro
 
 ## 2. Single-step Model Traning and Evaluation
 cd /GSETransformer
-### (2.1)To preprocess the data used for traning:
+### (2.1)To preprocess the data:
 ```
 python preprocess.py -train_src data/biochem_npl_20xaug/src-train.txt -train_tgt data/biochem_npl_20xaug/tgt-train.txt \
                      -valid_src data/biochem_npl_20xaug/src-val.txt  -valid_tgt data/biochem_npl_20xaug/tgt-val.txt  \
@@ -80,7 +80,7 @@ python translate_with_src_aug.py -model experiments/biochem_npl_20xaug/model_bes
                     -output data/biochem_npl_20xaug/pred.txt -replace_unk  -gpu 0  -beam_size 10 -n_best 10
 ```
 Noted that the hyper-parameter for USPTO-50k: `-beam_size 10 -n_best 50` </br>
-if opt.tgt above is given, script will do score the output results automatically.
+if `-tgt` above is provided, the script will automatically score the output results.
 
 ## 3.Multi-step Planning and Evaluation
 ### (3.1) To Plan retrosynthetic routes

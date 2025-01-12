@@ -18,6 +18,29 @@ Further processed raw data used for this paper is obtained from: https://github.
 - For the USPTO-50K dataset </br>
 The raw data is obtained from: https://github.com/Hanjun-Dai/GLN </br>
 The 20x augmented data is obtained from: https://github.com/otori-bird/retrosynthesis </br>
+The directory structure is shown below, and the relevant files downloaded from the above link should be placed accordingly:
+```
+GSETRetro
+├───GSETransformer
+│   ├───data
+│   │   ├───biochem_npl_20xaug
+│   │   │  └───src-train.txt/tgt-train.txt/src-val.txt/tgt-val.txt …
+│   │   │
+│   │   └───uspto_50k_20xaug
+│   │       └───src-train.txt/tgt-train.txt/src-val.txt/tgt-val.txt …
+│   ├───experiments
+│   │    ├───biochem_npl_20xaug
+│   │    │   └───model_step_xx.pt
+│   │    │
+│   │    └───uspto_50k_20xaug   
+│   │        └───model_step_xx.pt
+│   └─……
+├───data       
+├───retro_star
+├───utils      
+└───……
+```
+
 ## 2. Single-step Model Traning and Evaluation
 cd /GSETransformer
 ### (2.1)To preprocess the data used for traning:
@@ -27,7 +50,7 @@ python preprocess.py -train_src data/biochem_npl_20xaug/src-train.txt -train_tgt
                      -save_data data/biochem_npl_20xaug/biochem_npl_20xaug  \
                      -src_seq_length 1000 -tgt_seq_length 1000 -src_vocab_size 1000 -tgt_vocab_size 1000 -share_vocab
 ```
-It will generate one .pt file and one .pkl file each for the train and valid data. </br>
+It will generate one `.pt` file and one `.pkl` file each for the train and valid data. </br>
 ### (2.2)To train the model:
 ```
 CUDA_VISIBLE_DEVICES=${gpu_id}   \
@@ -56,7 +79,7 @@ python translate_with_src_aug.py -model experiments/biochem_npl_20xaug/model_bes
                     -src data/biochem_npl_20xaug/src-test.txt -tgt data/biochem_npl_20xaug/tgt-test.txt \
                     -output data/biochem_npl_20xaug/pred.txt -replace_unk  -gpu 0  -beam_size 10 -n_best 10
 ```
-Noted that the hyper-parameter for USPTO-50k: -beam_size 10 -n_best 50 </br>
+Noted that the hyper-parameter for USPTO-50k: `-beam_size 10 -n_best 50` </br>
 if opt.tgt above is given, script will do score the output results automatically.
 
 ## 3.Multi-step Planning and Evaluation

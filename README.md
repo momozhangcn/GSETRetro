@@ -12,10 +12,10 @@ pip install torchtext==0.6.0 torch_geometric==2.3.1 configargparse tensorboardX=
 ## 1. Data and Checkpoints
 The data and checkpoints used to reproduce the results of the paper can be accessed via the link: 
 https://drive.google.com/drive/folders/1tHuqdjdu2kxQChS2x-z1n3Hnhf-0rDBt
-### For the Biochem dataset
-The raw data is obtained from:https://github.com/zengtsysu/BioNavi </br>
+- For the Biochem dataset
+The raw data is originally sourced from: https://github.com/zengtsysu/BioNavi </br>
 Further processed raw data used for this paper is obtained from: https://github.com/SeulLee05/READRetro </br>
-### For the USPTO-50K dataset
+- For the USPTO-50K dataset
 The raw data is obtained from: https://github.com/Hanjun-Dai/GLN </br>
 The 20x augmented data is obtained from: https://github.com/otori-bird/retrosynthesis </br>
 ## 2. Single-step Model Traning and Evaluation

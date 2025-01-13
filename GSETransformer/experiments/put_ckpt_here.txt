@@ -1,0 +1,10 @@
+GSETRetro
+├───GSETransformer
+│   ├───data
+│   │ 
+│   ├───experiments
+│   │    ├───biochem_npl_20xaug
+│   │    │   └───model_step_xx.pt
+│   │    │
+│   │    └───uspto_50k_20xaug   
+│   │        └───model_step_xx.pt

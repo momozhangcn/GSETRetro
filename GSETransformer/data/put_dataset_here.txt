@@ -1,0 +1,13 @@
+GSETRetro
+├───GSETransformer
+│   ├───data
+│   │   ├───biochem_npl_20xaug
+│   │   │  └───src-train.txt/tgt-train.txt/src-val.txt/tgt-val.txt/src-test.txt/tgt-test.txt …
+│   │   │  
+│   │   ├───uspto_50k_20xaug
+│   │   │      └───src-train.txt/tgt-train.txt/src-val.txt/tgt-val.txt/src-test.txt/tgt-test.txt …
+│   │   │ 
+│   │   ├───biochem_npl
+│   │   │  └───raw_train.csv/raw_val.csv/raw_test.csv…src-xx.txt/tgt-xx.txt……
+│   │   ├───uspto_50k
+│   │   │  └───raw_train.csv/raw_val.csv/raw_test.csv…src-xx.txt/tgt-xx.txt……

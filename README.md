@@ -61,21 +61,18 @@ python preprocess.py -train_src data/biochem_npl_20xaug/src-train.txt -train_tgt
 CUDA_VISIBLE_DEVICES=${gpu_id}   \
 python  train.py -data  data/biochem_npl_20xaug/biochem_npl_20xaug \
                  -save_model experiments/biochem_npl_20xaug/model \
-                 -seed 2024 -gpu_ranks 0 \
-                 -save_checkpoint_steps 10000  \
-                 -train_steps 400000 -valid_steps 5000 -report_every 1000 \
+                 -seed 2024 -gpu_ranks 0 -save_checkpoint_steps 10000  \
+                 -train_steps 500000 -valid_steps 1000 -report_every 1000 \
                  -param_init 0 -param_init_glorot \
                  -batch_size 4096 -batch_type tokens -normalization tokens \
-                 -dropout 0.3 -max_grad_norm 0 -accum_count 4 \
-                 -optim adam -adam_beta1 0.9 -adam_beta2 0.998 \
-                 -decay_method noam -warmup_steps 8000  \
-                 -learning_rate 2 -label_smoothing 0.0 \
+                 -dropout 0.3 -max_grad_norm 0 -accum_count 4 -learning_rate 2 -label_smoothing 0.0 \
+                 -optim adam -adam_beta1 0.9 -adam_beta2 0.998 -decay_method noam -warmup_steps 8000  \
                  -enc_layers 6 -dec_layers 6 -rnn_size 512 -word_vec_size 512 \
                  -encoder_type transformer -decoder_type transformer \
                  -share_embeddings -position_encoding -max_generator_batches 32 \
                  -global_attention general -global_attention_function softmax \
                  -self_attn_type scaled-dot -max_relative_positions 4 \
-                 -heads 8 -transformer_ff 2048  -early_stopping 40 -keep_checkpoint 10 \
+                 -heads 8 -transformer_ff 2048  -early_stopping 100 -keep_checkpoint 10 \
                  -tensorboard -tensorboard_log_dir runs/biochem_npl_20xaug 2>&1 | tee runs/biochem_npl_20xaug.log
 ```
 Noted that the hyperparameters `-rnn_size` and `-word_vec_size` are set to 256 for USPTO and 512 for Biochem. Intuitively, the larger the vocab size, the larger these parameters should be.
@@ -84,7 +81,8 @@ Noted that the hyperparameters `-rnn_size` and `-word_vec_size` are set to 256 f
 CUDA_VISIBLE_DEVICES=${gpu_id}   \
 python translate_with_src_aug.py -model experiments/biochem_npl_20xaug/model_best_acc_step_355000.pt   \
                     -src data/biochem_npl_20xaug/src-test.txt -tgt data/biochem_npl_20xaug/tgt-test.txt \
-                    -output data/biochem_npl_20xaug/pred_model_best_acc_step_355000_n10b10.txt -replace_unk  -gpu 0  -beam_size 10 -n_best 10 -src_aug_time 20
+                    -output data/biochem_npl_20xaug/pred_model_best_acc_step_355000_n10b10.txt \
+                    -replace_unk  -gpu 0  -beam_size 10 -n_best 10 -src_aug_time 20
 ```
 Noted that the hyperparameters for USPTO-50k are set as: `-beam_size 10 -n_best 50`. </br>
 if `-tgt` above is given, the script will automatically score the output results.</br>

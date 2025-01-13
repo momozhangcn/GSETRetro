@@ -1,41 +1,39 @@
 import torch
 import os
-import pandas as pd
 from retro_star.common import prepare_starting_molecules, \
      prepare_molstar_planner, smiles_to_fp
 from retro_star.model import ValueMLP
 from retro_star.utils import setup_logger
-
-# from retro_star.retriever import Retriever, run_retriever, run_retriever_only, \
-#     neutralize_atoms, kegg_search, \
-from retro_star.retriever import neutralize_atoms, kegg_search
-#     pathRetriever, run_path_retriever, run_both_retriever
 from rdkit import Chem
 import random
 
 class RSPlanner:
-    dir_name = os.path.dirname(__file__)
+    root_dir_path = os.path.dirname(os.path.dirname(__file__))
     def __init__(self,
                  cuda=True,
                  beam_size=10,
                  iterations=500,
                  expansion_topk=10,
                  use_value_fn=True,
-                 starting_molecules='data/building_block.csv',
-                 value_model=f'{dir_name}/saved_model/best_epoch_final_4.pt',
+                 starting_molecules=f'{root_dir_path}/data/building_block.csv',
+                 value_model=f'{os.path.dirname(__file__)}/saved_model/best_epoch_final_4.pt',
                  model_type='ensemble',
                  model_path=None,
-                 retrieval_db='data/train_canonicalized.txt',
+                 retrieval_db=f'{root_dir_path}/data/train_canonicalized.txt',
                  path_retrieval_db='data/pathways.pickle',
-                 kegg_mol_db = "data/kegg_neutral_iso_smi.csv",
+                 kegg_mol_db="data/kegg_neutral_iso_smi.csv",
                  route_topk=10,
                  retrieval=True,
                  path_retrieval=True,
                  seed=3435):
 
         setup_logger()
-        device = torch.device('cuda' if cuda else 'cpu')
-        device_bool = cuda
+        if cuda and torch.cuda.is_available():
+            device = torch.device('cuda')
+            device_bool = True
+        else:
+            device = torch.device('cpu')
+            device_bool = False
         random.seed(seed)
         torch.manual_seed(seed)
 
@@ -44,14 +42,13 @@ class RSPlanner:
         self.path_retrieve_token = None
         self.kegg_mol_db = None
         self.path_retrieval_db = None
-        gset_model_path = '/home/zhangmeng/aMy-ONMT010/experiments/final_biochem_npl_20xaug_RSmiles/model_best_acc_step_355000.pt'
-        #gset_model_path = '/home/zhangmeng/aMy-ONMT010/experiments/final_biochem_npl_clean_20xaug_RSmiles/model_best_acc_step_440000.pt'
 
-        if model_path is None:
-            retroformer_path = 'retroformer/saved_models/biochem.pt'
-            g2s_path = 'g2s/saved_models/biochem.pt'
+        if model_path is not None:
+            gset_model_path = model_path
+        else:
+            gset_model_path = '/home/zhangmeng/aMy-ONMT010/experiments/final_biochem_npl_20xaug_RSmiles/model_best_acc_step_355000.pt'
 
-        elif model_type == 'Chemformer': #prepare_GSET_translator, run_GSET_translate
+        if model_type == 'Chemformer': #prepare_GSET_translator, run_GSET_translate
             from Chemformer.translate_multi_step import prepare_MolBART_translator, run_MolBART_translate
             #MolBART_model_path = '/data/zhangmeng/Chemformer-main/tb_logs/backward_prediction/ori_data_new_vocab_100e/checkpoints/epoch=49-step=34699.ckpt'
             MolBART_model_path = '/data/zhangmeng/Chemformer-main/tb_logs/backward_prediction/version_2/checkpoints/epoch=199-step=137799.ckpt'
@@ -94,11 +91,10 @@ class RSPlanner:
             translator, opt = prepare_GSET_translator(gset_model_path,  beam_size, expansion_topk, device_bool)
             expansion_handler = lambda x: run_GSET_translate(x, translator, opt)
 
-        elif not path_retrieval and retrieval:  # READRetro
+        #else:
+        elif model_type in ['ensemble', 'GSETransformer+Retriver']:  # READRetro
             from GSETransformer.translate_multi_step import prepare_GSET_translator
             from retro_star.retriever import Retriever, run_retriever_GSET
-            # if model_path is not None:
-            #     retroformer_path, g2s_path = model_path.split(',')
             translator, opt = prepare_GSET_translator(gset_model_path, beam_size, expansion_topk, device)
             retriever = Retriever(retrieval_db)
             expansion_handler = lambda x: run_retriever_GSET(x, retriever, translator, opt)
@@ -132,33 +128,6 @@ class RSPlanner:
             starting_mols=starting_mols,
             iterations=iterations
         )
-        # else:
-        #     plan_handle2 = None
-        # self.plan_handle2 = plan_handle2
-        # self.plan_handle2 = prepare_molstar_planner(
-        #     expansion_handler=expansion_handler2,
-        #     value_fn=value_fn,
-        #     starting_mols=starting_mols,
-        #     iterations=iterations
-        # )
-
-
-    def __keggpath_find(self,routes,token,mol_db,path_db,top_k):
-        modi_list = []
-        for route in routes[:top_k]:
-            r = route.split(">")
-            token_position = [i for i,j in enumerate(r) if token in j]
-            for pos in token_position:
-                cid, _ = kegg_search(neutralize_atoms(r[pos-2].split("|")[-1]),mol_db)
-                target_maps = path_db["Map"][path_db['Pathways'].apply(lambda x: any(cid in sublist for sublist in x))].to_list()
-                map = target_maps[0]  # check a representation method
-                r[pos] = r[pos].replace(token,f'{token}=kegg.jp/pathway/{map}+{cid}')
-                if target_maps == []:  # not the case
-                    modi_list.append(route)
-
-            modi_route = '>'.join(r)
-            modi_list.append(modi_route)
-        return modi_list
 
     def _single_plan_handle(self, plan_handle, target_mol_in):
         try:

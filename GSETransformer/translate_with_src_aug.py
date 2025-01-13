@@ -2,17 +2,17 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import unicode_literals
-from itertools import repeat
-try:
-    from .data_utils.generate_edge_index import get_single_edge_index, generate_edge_index_pkl
-    from .data_utils.score_result import read_file, match_smiles_lists
-    from .data_utils.src_aug_res_rerank import \
-        atom_map_src_smi, atom_mapped_src_aug, compute_rank_rerank, smi_tokenizer, canonicalize_smiles
-except:
-    from data_utils.generate_edge_index import get_single_edge_index, generate_edge_index_pkl
-    from data_utils.score_result import read_file, match_smiles_lists
-    from data_utils.src_aug_res_rerank import \
-        atom_map_src_smi, atom_mapped_src_aug, compute_rank_rerank, smi_tokenizer, canonicalize_smiles
+import os
+import sys
+current_folder = os.path.dirname(__file__)
+if current_folder not in sys.path:
+    sys.path.append(os.path.dirname(__file__))
+
+from GSETransformer.data_utils.generate_edge_index import get_single_edge_index, generate_edge_index_pkl
+from GSETransformer.data_utils.score_result import read_file, match_smiles_lists
+from GSETransformer.data_utils.src_aug_res_rerank import \
+    atom_map_src_smi, atom_mapped_src_aug, compute_rank_rerank, smi_tokenizer, canonicalize_smiles
+
 
 # must import rdkit/generate_edge_index before onmt
 from onmt.utils.logging import init_logger
@@ -106,19 +106,6 @@ def _get_parser():
 if __name__ == "__main__":
     parser = _get_parser()
     opt = parser.parse_args()
-    # edge_index_path = opt.src[:-4] + '_edge_index.pkl'
-    # if not os.path.exists(edge_index_path):
-    #     generate_edge_index_pkl(opt.src)
-
     main(opt)
 
-'''/////data_sdd_Biochem//////data_sdd_uspto//////
-#gset
-CUDA_VISIBLE_DEVICES=3 python translate.py -model experiments/uspto_50k_auged_x20_256stop/model_step_40000.pt   \
--src data/aug_uspto_50k_20x/src-test_aug.txt -tgt data/aug_uspto_50k_20x/tgt-test_aug.txt \
--output data/aug_uspto_50k_20x/GSET_pred_model_step_40000_b50n50.txt -replace_unk  -gpu 0  -beam_size 50 -n_best 50 
-#onmt
-CUDA_VISIBLE_DEVICES=7 python translate.py 
 
-/home/zhangmeng/aMy-ONMT003/
-'''

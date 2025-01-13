@@ -3,7 +3,9 @@
 
 from __future__ import unicode_literals
 from itertools import repeat
+
 from data_utils.generate_edge_index import generate_edge_index_pkl
+from data_utils.score_result import read_file, match_smiles_lists
 # must import rdkit/generate_edge_index before onmt
 from onmt.utils.logging import init_logger
 from onmt.utils.misc import split_corpus, split_matrix
@@ -14,43 +16,6 @@ from onmt.utils.parse import ArgumentParser
 import os
 
 
-def DIY_evaluate(output_path, target_path):
-    with open(target_path, 'r') as tgt_file:
-        with open(output_path, 'r') as prdt_file:
-            count = 0
-            i_seq = []
-            tgt_lst = tgt_file.readlines()
-            prdt_lst = prdt_file.readlines()
-
-            n_beam = int(len(prdt_lst) / len(tgt_lst))
-            print(f'beam = {n_beam}')
-            if n_beam < 20:
-                check_lst = [1, 3, 5, 10]
-            elif 20 <= n_beam < 50:
-                check_lst = [1, 3, 5, 10, 20]
-            else:
-                check_lst = [1, 3, 5, 10, 20, 50]
-            for k in check_lst:  # ,15,20,20,50
-                count_k = 0
-                count_correct = 0
-                for i, line in enumerate(tgt_lst):
-                    line = line.replace(' ', '').strip('\n')  # 去除空格#
-                    left_b = i * n_beam
-                    right_b = i * n_beam + k  # +1
-                    correct_pred = False
-                    for aline in prdt_lst[left_b:right_b]:
-                        # for h,chrs in enumerate(aline):
-                        #     if chrs ==',':
-                        #         aline = aline[:h]
-                        aline = aline.replace(' ', '').strip('\n')  # 去除空格#
-                        # print(aline)
-                        if aline == line:
-                            # print(i)
-                            count_k += 1
-                            correct_pred = True  # 存在正确预测，洗
-                            break
-                acc = (count_k / len(tgt_lst)) * 100
-                print(f'top_{k:2d}, acc:{acc:5.2f}%')
 
 def main(opt):
     ArgumentParser.validate_translate_opts(opt)
@@ -78,7 +43,8 @@ def main(opt):
             edge_index=edge_index_shard,
             )#add
     if opt.tgt:
-        DIY_evaluate(opt.output, opt.tgt)
+        smiles_list, target_list, beam = read_file(opt.output, opt.tgt)
+        match_smiles_lists(smiles_list, target_list, beam)
 
 
 def _get_parser():

@@ -1,36 +1,20 @@
-import numpy as np
-import pandas as pd
-import argparse
+
 import sys
 import os
 import re
 import random
-import textdistance
-import multiprocessing
 
 if os.path.dirname(__file__) not in sys.path:
     sys.path.append(os.path.dirname(__file__))
 
 from rdkit import Chem
-from tqdm import tqdm
 from rxnmapper import RXNMapper
 
 from rdkit import RDLogger
 RDLogger.DisableLog('rdApp.*')
 rxn_mapper = RXNMapper()
 
-def atom_map_src_smi(smi):
-    smi = smi.strip().replace(' ', '')
-    pad_reaction = smi + '>>' + smi
 
-    try:
-        get_atomap_reaction = rxn_mapper.get_attention_guided_atom_maps([pad_reaction])  ## 传入列表，不可字符串
-        atomap_reaction = get_atomap_reaction[0]['mapped_rxn']  # 化学式 #返回内含一个字典的列表，lst[0]字典，dct['mapped_rxn']为映射后的化学式
-        atom_mapped_src = atomap_reaction.split('>>')[0]
-    except:
-        return smi  #False, smi
-    else:
-        return atom_mapped_src  #True, atom_mapped_src
 
 
 def smi_tokenizer(smi):
@@ -40,6 +24,23 @@ def smi_tokenizer(smi):
     assert smi == ''.join(tokens)
     return ' '.join(tokens)
 
+def canonicalize_smiles(smiles):
+    smiles = smiles.strip().replace(' ', '')
+    try:
+        mol = Chem.MolFromSmiles(smiles)
+    except:
+        return ''
+    else:
+        if mol is not None:
+            [atom.ClearProp('molAtomMapNumber') for atom in mol.GetAtoms() if atom.HasProp('molAtomMapNumber')]
+            try:
+                smi = Chem.MolToSmiles(mol, isomericSmiles=True, canonical=True)
+            except:
+                return ''
+            else:
+                return smi
+        else:
+            return ''
 
 def clear_map_canonical_smiles(smi, canonical=True, root=-1):
     mol = Chem.MolFromSmiles(smi)
@@ -60,7 +61,18 @@ def get_root_id(mol,root_map_number):
             break
     return root
 
+def atom_map_src_smi(smi):
+    smi = smi.strip().replace(' ', '')
+    pad_reaction = smi + '>>' + smi
 
+    try:
+        get_atomap_reaction = rxn_mapper.get_attention_guided_atom_maps([pad_reaction])  ## 传入列表，不可字符串
+        atomap_reaction = get_atomap_reaction[0]['mapped_rxn']  # 化学式 #返回内含一个字典的列表，lst[0]字典，dct['mapped_rxn']为映射后的化学式
+        atom_mapped_src = atomap_reaction.split('>>')[0]
+    except:
+        return smi  #False, smi
+    else:
+        return atom_mapped_src  #True, atom_mapped_src
 
 # data atom mapped src and aug time
 def atom_mapped_src_aug(if_mapped_smi, aug_time):
@@ -172,23 +184,6 @@ def compute_rank_rerank(prediction,beam_size, raw=False,alpha=1.0):
         #ranked_results.append([item[0][0] for item in rank])
     return rank_pred, rank_score
 
-def canonicalize_smiles(smiles):
-    smiles = smiles.strip().replace(' ', '')
-    try:
-        mol = Chem.MolFromSmiles(smiles)
-    except:
-        return ''
-    else:
-        if mol is not None:
-            [atom.ClearProp('molAtomMapNumber') for atom in mol.GetAtoms() if atom.HasProp('molAtomMapNumber')]
-            try:
-                smi = Chem.MolToSmiles(mol, isomericSmiles=True, canonical=True)
-            except:
-                return ''
-            else:
-                return smi
-        else:
-            return ''
 
 if __name__ == "__main__":
     smi = 'C=CC(C)(C)[C@@]12C[C@H]3c4nc5ccccc5c(=O)n4[C@H](C)C(=O)N3C1N(C(C)=O)c1ccccc12'.replace(' ', '')

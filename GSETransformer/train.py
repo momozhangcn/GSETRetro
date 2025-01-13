@@ -15,9 +15,6 @@ from onmt.inputters.inputter import build_dataset_iter, \
     load_old_vocab, old_style_vocab, build_dataset_iter_multiple
 
 from itertools import cycle
-'''
--data data/biochem/biochem_token  -save_model experiments/biochem -seed 2020 -gpu_ranks 0 -batch_size 1024 -save_checkpoint_steps 5000  -keep_checkpoint 41  -train_steps 200000 -valid_steps 2000 -report_every 1000  -param_init 0 -param_init_glorot   -batch_type tokens -normalization tokens   -dropout 0.3 -max_grad_norm 0 -accum_count 4  -optim adam -adam_beta1 0.9 -adam_beta2 0.998  -decay_method noam -warmup_steps 8000  -learning_rate 2 -label_smoothing 0.0  -enc_layers 6 -dec_layers 6 -rnn_size 256 -word_vec_size 256  -encoder_type transformer -decoder_type transformer  -share_embeddings -position_encoding -max_generator_batches 0   -global_attention general -global_attention_function softmax  -self_attn_type scaled-dot -max_relative_positions 4 -heads 8 -transformer_ff 2048  -early_stopping 30  
-'''
 
 def main(opt):
     ArgumentParser.validate_train_opts(opt)

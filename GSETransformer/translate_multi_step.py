@@ -5,20 +5,13 @@ from __future__ import unicode_literals
 import os
 import sys
 
-root = os.path.abspath('.')
-if root not in sys.path:
-    sys.path.insert(0, root)
-elif os.path.dirname(__file__) not in sys.path:
+current_folder = os.path.dirname(__file__)
+if current_folder not in sys.path:
     sys.path.append(os.path.dirname(__file__))
 
-try:
-    from .data_utils.generate_edge_index import get_single_edge_index
-    from .data_utils.src_aug_res_rerank import \
-        atom_map_src_smi, atom_mapped_src_aug, compute_rank_rerank, smi_tokenizer, canonicalize_smiles
-except:
-    from data_utils.generate_edge_index import get_single_edge_index
-    from data_utils.src_aug_res_rerank import \
-        atom_map_src_smi, atom_mapped_src_aug, compute_rank_rerank, smi_tokenizer, canonicalize_smiles
+from GSETransformer.data_utils.generate_edge_index import get_single_edge_index
+from GSETransformer.data_utils.src_aug_res_rerank import \
+    atom_map_src_smi, atom_mapped_src_aug, compute_rank_rerank, smi_tokenizer, canonicalize_smiles
 
 from onmt.utils.logging import init_logger
 #from custom_onmt.utils.misc import split_corpus

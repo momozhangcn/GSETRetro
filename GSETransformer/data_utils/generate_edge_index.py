@@ -1,7 +1,4 @@
 
-import os
-import argparse
-import re
 from tqdm import tqdm
 import rdkit.Chem as Chem
 from rdkit.Chem import rdmolops
@@ -89,11 +86,7 @@ def generate_edge_index_pkl(path_arg):
         print(f'have extracted edge_index for {path}, total {len(src_lines)} , pad for {count_pad}')
 
 if __name__ == "__main__":
-    # parser = argparse.ArgumentParser(description="Get file and fn_type ")
-    # parser.add_argument('--path_lst', '-path_lst', type=str, nargs='+', default=[], required=True)
-    # args = parser.parse_args()
-    # print(args)
-    # generate_edge_index_pkl(args.path_lst)
+
     src = ['C S C C C ( O ) ( C C ( = O ) O ) C ( = O ) O',
                'C C C C C C ( = O ) C C ( = O ) C C ( = O ) C C ( * ) = O']
 
@@ -109,8 +102,3 @@ if __name__ == "__main__":
     else:
         print(mol_adjacency, 'ttttttttttttt')
 
-    '''
-python generate_edge_index.py -path_lst        \
-'/home/zhangmeng/aMy-ONMT003/data/biochem_npl_20xaug_RSMILES/src-test.txt'  '/home/zhangmeng/aMy-ONMT003/data/biochem_npl_20xaug_RSMILES/src-train.txt' '/home/zhangmeng/aMy-ONMT003/data/biochem_npl_20xaug_RSMILES/src-val.txt'  
-
-    '''

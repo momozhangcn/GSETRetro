@@ -9,7 +9,7 @@ import os.path
 import sys
 import gc
 import torch
-from data_utils.generate_edge_index import generate_edge_index_pkl
+from GSETransformer.data_utils.generate_edge_index import generate_edge_index_pkl
 
 from functools import partial
 from collections import Counter, defaultdict
@@ -20,8 +20,6 @@ import onmt.inputters as inputters
 import onmt.opts as opts
 from onmt.utils.parse import ArgumentParser
 from onmt.inputters.inputter import _build_fields_vocab, _load_vocab
-
-import torchtext
 
 
 def check_existing_pt_files(opt):

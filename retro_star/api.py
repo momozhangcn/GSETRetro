@@ -165,6 +165,4 @@ class RSPlanner:
         succ, routes_list = self._single_plan_handle(self.plan_handle, target_mol_in)
         if succ:
             print(routes_list)
-        else:
-            succ, routes_list = self._single_plan_handle(self.plan_handle2, target_mol_in)
         return routes_list

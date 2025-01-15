@@ -10,6 +10,8 @@ import sys
 
 if sys.platform.startswith('win'):  ## need to add environ aug here ## required by windows verision Graphviz
     os.environ["PATH"] += os.pathsep + 'D:/Program Files/Graphviz/bin'
+# global model_path
+# model_path
 
 import shutil
 import string
@@ -67,7 +69,7 @@ class TableModel(QtCore.QAbstractTableModel):
 class Thread_PredictDerivative(QThread):
     _r = QtCore.pyqtSignal(pd.DataFrame)
 
-    def __init__(self, precursor_smiles_list, model_type, beam_size, exp_topk, iterations, route_topk, device):
+    def __init__(self, precursor_smiles_list, model_type, beam_size, exp_topk, iterations, route_topk, device, model_path):
         super().__init__()
         self.smiles_list = precursor_smiles_list
         self.model_type = model_type
@@ -76,15 +78,11 @@ class Thread_PredictDerivative(QThread):
         self.iterations = iterations
         self.route_topk = route_topk
         self.device = device
+        self.send_model_path = model_path
     def run(self):
+        derivative_list = utils.predict_compound_derivative_GSETransformer(self.smiles_list, self.model_type,
+                    self.beam_size, self.exp_topk,self.iterations, self.route_topk,  self.device, self.send_model_path)
 
-        if self.model_type == 'GSETransformer':
-            derivative_list = utils.predict_compound_derivative_GSETransformer(self.smiles_list,
-                        self.model_type, self.beam_size, self.exp_topk,self.iterations, self.route_topk, self.device)
-
-        ###
-        else:
-            derivative_list = None
         self._r.emit(derivative_list)
 
 
@@ -111,8 +109,8 @@ class NPRetro_App(QMainWindow, Ui_MainWindow):
         self.progressBar.setFormat('Ready')
 
         try:
-            shutil.rmtree('temp')
-            os.mkdir('temp')
+            shutil.rmtree('data/temp_data')
+            os.mkdir('data/temp_data')
         except:
             pass
 
@@ -127,10 +125,13 @@ class NPRetro_App(QMainWindow, Ui_MainWindow):
         self.pushButton_chem_draw.clicked.connect(self.PubchemSketcherUI.show)
         self.pushButton_chem_clear.clicked.connect(self.listWidget_chem_list.clear)
         self.pushButton_chem_show.clicked.connect(self.show_chemical_image)
-        #add
+        # predict button
         self.pushButton_chem_predict.clicked.connect(self.predict_compound_derivative)
-        #top button
+        # setting button
         self.pushButton_setting.clicked.connect(self.ParametersUI.open)
+        self.ParametersUI.button_ModelPath.clicked.connect(self.load_model_path)
+        self.model_path = None
+        # save buttom
         self.pushButton_save.clicked.connect(self.save_as_file)  # new add here
         #
         self.routeList = None
@@ -146,6 +147,13 @@ class NPRetro_App(QMainWindow, Ui_MainWindow):
         #self.tableWidget_RouteList.cellClicked.connect(self.show_synthesis_path)
 
         self.tableWidget_PrecursorList.cellClicked.connect(self.fill_AMDET_table)
+
+    def load_model_path(self):
+        options = QtWidgets.QFileDialog.Options()
+        options |= QtWidgets.QFileDialog.DontUseNativeDialog
+        fileName, _ = QtWidgets.QFileDialog.getOpenFileName(self, "Select File", "", "pt. Files (*.pt)",options=options)
+        self.model_path = fileName
+        print(self.model_path)
 
     def save_as_file(self):  # self.derivative_list 可能为none 可能为
         if isinstance(self.derivative_list, pd.DataFrame):
@@ -317,7 +325,7 @@ class NPRetro_App(QMainWindow, Ui_MainWindow):
         exp_topk = self.ParametersUI.spinBox_Expansion_Number.value()
         iterations = self.ParametersUI.spinBox_Iterations_Number.value()
         route_topk = self.ParametersUI.spinBox_Route_Number.value()
-
+        model_path = self.model_path
 
         if exp_topk > beam_size: # kee exp_topk <= beam_size
             exp_topk = beam_size
@@ -326,7 +334,7 @@ class NPRetro_App(QMainWindow, Ui_MainWindow):
         self.progressBar.setValue(30)
         self.progressBar.setFormat('Predicting and Planing')
         self.Thread_PredictDerivative = Thread_PredictDerivative(
-            precursor_smiles_list, model_type, beam_size, exp_topk, iterations, route_topk, device)
+            precursor_smiles_list, model_type, beam_size, exp_topk, iterations, route_topk, device, model_path)
 
         self.Thread_PredictDerivative._r.connect(self._set_derivative_list)
         self.Thread_PredictDerivative.start()
@@ -382,13 +390,13 @@ class NPRetro_App(QMainWindow, Ui_MainWindow):
             self._set_finished()
 
     def predict_ADMET(self, full_smi_lst):
-
+        print('Predicting AMDET')
         self.progressBar.setValue(70)
         self.progressBar.setFormat('Predicting AMDET')
         self.Thread_PredictAMDET = Thread_PredictADMET(full_smi_lst)
         self.Thread_PredictAMDET._r.connect(self._set_AMDET_list)
         self.Thread_PredictAMDET.start()
-        #self.Thread_PredictAMDET.finished.connect()
+        #self.Thread_PredictAMDET.finished.connect(self.fill_single_route_list)
 
 
     def fill_single_route_list(self):

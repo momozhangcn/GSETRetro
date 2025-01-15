@@ -5,7 +5,7 @@ from retro_star.api import RSPlanner
 from time import time
 import argparse
 
-def run_Muiti_Step_Plan(input_smi, model_type, beam_size, exp_topk, iterations,route_topk, device):
+def run_Muiti_Step_Plan(input_smi, model_type, beam_size, exp_topk, iterations,route_topk, device, model_path=None):
     parser = argparse.ArgumentParser()
     root_dir_path = os.path.dirname(os.path.dirname(__file__))
     #default parameters
@@ -33,6 +33,11 @@ def run_Muiti_Step_Plan(input_smi, model_type, beam_size, exp_topk, iterations,r
     args.iterations = iterations
     args.route_topk = route_topk
     args.device = device.lower()
+    if model_path != None:
+        args.model_path = model_path
+    print(f'Multi-step planning args: {args}')
+    print(F'Loading model from  {args.model_path}')
+
     t_start = time()
     planner = RSPlanner(
         cuda=args.device=='cuda',
@@ -51,7 +56,6 @@ def run_Muiti_Step_Plan(input_smi, model_type, beam_size, exp_topk, iterations,r
     args.product = input_smi[0]
 
     result = planner.plan(args.product)
-    print(result)
     if result is None:
         result = pd.DataFrame()
         print('None')

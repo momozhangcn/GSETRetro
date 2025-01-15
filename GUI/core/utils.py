@@ -1,10 +1,4 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Mon Mar  4 11:39:16 2024
-
-@author: DELL
-"""
-
 
 import numpy as np
 import pandas as pd
@@ -13,9 +7,19 @@ from admet_ai import ADMETModel
 
 def predict_compound_ADMET_property(smiles_list):
     results = {}
-    model = ADMETModel()
-    smiles_list = np.unique(smiles_list)
-    results = model.predict(smiles=smiles_list)
+    try:
+        model = ADMETModel()
+        smiles_list = np.unique(smiles_list)
+        results = model.predict(smiles=smiles_list)
+    except:
+        model = ADMETModel(num_workers=0)
+        # Setting num_workers=0 will slow down the process.
+        # If not set, it might raise the following error:
+        # self.multiprocessing_context = multiprocessing_context
+        # raise ValueError( ValueError: multiprocessing_context option should
+        # specify a valid start method in ['spawn'], but got multiprocessing_context='forkserver'
+        smiles_list = np.unique(smiles_list)
+        results = model.predict(smiles=smiles_list)
     return results.reset_index()
 
 
@@ -132,6 +136,6 @@ def refine_compound_ADMET_property(ADMET_list, smiles, property_class = 'Physico
 
 
 from GUI.multi_step_plan_4GUI import run_Muiti_Step_Plan
-def predict_compound_derivative_GSETransformer(smiles_list, model_type, beam_size, exp_topk, iterations,route_topk,device):
-    result = run_Muiti_Step_Plan(smiles_list, model_type, beam_size, exp_topk, iterations,route_topk, device)
+def predict_compound_derivative_GSETransformer(smiles_list, model_type, beam_size, exp_topk, iterations,route_topk,device, model_path):
+    result = run_Muiti_Step_Plan(smiles_list, model_type, beam_size, exp_topk, iterations,route_topk, device, model_path)
     return result

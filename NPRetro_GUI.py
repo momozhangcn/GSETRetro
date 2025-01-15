@@ -110,9 +110,9 @@ class NPRetro_App(QMainWindow, Ui_MainWindow):
 
         try:
             shutil.rmtree('data/temp_data')
-            os.mkdir('data/temp_data')
+            os.makedirs('data/temp_data')
         except:
-            pass
+            os.makedirs('data/temp_data')
 
         self.precursor = None
 

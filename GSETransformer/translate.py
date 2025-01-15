@@ -2,8 +2,13 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import unicode_literals
-from itertools import repeat
 
+import os
+import sys
+if os.path.dirname(__file__) not in sys.path:
+    sys.path.append(os.path.dirname(__file__))
+
+from itertools import repeat
 from data_utils.generate_edge_index import generate_edge_index_pkl
 from data_utils.score_result import read_file, match_smiles_lists
 # must import rdkit/generate_edge_index before onmt

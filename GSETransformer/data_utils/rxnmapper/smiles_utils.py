@@ -1,6 +1,11 @@
 """Contains functions needed to process reaction SMILES and their tokens"""
 from __future__ import absolute_import, division, print_function, unicode_literals
 
+import os
+import sys
+if os.path.dirname(__file__) not in sys.path:
+    sys.path.append(os.path.dirname(__file__))
+
 import logging
 import re
 from functools import partial

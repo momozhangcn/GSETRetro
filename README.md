@@ -3,11 +3,11 @@
 Create a virtual environment and install the dependencies.<br>
 Install pytorch with the cuda version that fits your device.<br>
 ```
-conda create -n yourenv python=3.10
-conda activate yourenv
-conda install pytorch==1.13.0 torchvision==0.14.0 torchaudio==0.13.0 pytorch-cuda=11.7 -c pytorch -c nvidia
+conda create -n GSETRetro_env python=3.10
+conda activate GSETRetro_env
+pip install torch==1.13.0+cu117 torchvision==0.14.0+cu117 torchaudio==0.13.0 --extra-index-url https://download.pytorch.org/whl/cu117
 pip install torchtext==0.6.0 torch_geometric==2.3.1 configargparse tensorboardX==2.6.2.2 textdistance==4.2.2 rxnmapper==0.3.0
-pip install admet-ai==1.2.0  graphviz pyqt5  pyqtwebengine numpy==1.26.4
+pip install admet-ai==1.3.0  graphviz pyqt5  pyqtwebengine numpy==1.26.4
 ```
 ## 1. Data and Checkpoints
 The data and checkpoints used to reproduce the results of the paper can be accessed via the link: 
@@ -99,8 +99,9 @@ python eval.py ${save_file}
 ```
 ## 4.GUI usage
 1. Run `python NPRetro_GUI.py` to open the GUI interface.</br>
-2. Enter the target molecule in the `Input` field and click the `Add` button to add it to the `List`.</br>
-Click the `Settings` button to modify the hyperparameters. The default hyperparameters are those used in the paper.</br>
+2. Click the `Setting` button to modify the hyperparameters. The default hyperparameters are those used in the paper.</br>
+Pls download our trained model first, if you place the model file (.pt) at a random path instead of following the complex directory structure mentioned above, you can specify its location through the `Setting-Upload` option.
+3. Enter the target molecule in the `Input` field and click the `Add` button to add it to the `List`.</br>
 ![GUI_usage_1/2](GUI/GUI_usage_1.png)
 3. Switch to the `List` field and click the `Predict` button to perform the routes prediction.</br>
 If predicted routes are obtained, click random route to view the details.</br>

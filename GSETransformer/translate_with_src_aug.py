@@ -4,8 +4,9 @@
 from __future__ import unicode_literals
 import os
 import sys
-current_folder = os.path.dirname(__file__)
-if current_folder not in sys.path:
+import os
+import sys
+if os.path.dirname(__file__) not in sys.path:
     sys.path.append(os.path.dirname(__file__))
 
 from GSETransformer.data_utils.generate_edge_index import get_single_edge_index, generate_edge_index_pkl

@@ -1,10 +1,13 @@
 # coding=utf-8
 # made to match the Hugginface transformer interface
 # Based on: https://github.com/huggingface/transformers/blob/master/src/transformers/tokenization_bert.py
+import os
+import sys
+if os.path.dirname(__file__) not in sys.path:
+    sys.path.append(os.path.dirname(__file__))
 
 import collections
 import logging
-import os
 import re
 
 from transformers import BertTokenizer

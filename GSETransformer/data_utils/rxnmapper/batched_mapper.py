@@ -1,3 +1,9 @@
+
+import os
+import sys
+if os.path.dirname(__file__) not in sys.path:
+    sys.path.append(os.path.dirname(__file__))
+
 import logging
 from typing import Any, Dict, Iterable, Iterator, List, Optional
 
@@ -5,7 +11,7 @@ import pkg_resources
 from rxn.utilities.containers import chunker
 from rxn.utilities.files import PathLike
 
-from .core import RXNMapper
+from core import RXNMapper
 
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())

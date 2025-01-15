@@ -1,8 +1,12 @@
 """Core RXN Attention Mapper module."""
 from __future__ import absolute_import, division, print_function, unicode_literals
 
-import logging
 import os
+import sys
+if os.path.dirname(__file__) not in sys.path:
+    sys.path.append(os.path.dirname(__file__))
+
+import logging
 from typing import Any, Dict, Iterator, List, Optional, Tuple
 
 import numpy as np

@@ -8,10 +8,11 @@ Created on Mon Mar  4 14:54:21 2024
 import os
 import sys
 
-if sys.platform.startswith('win'):  ## need to add environ aug here ## required by windows verision Graphviz
+if sys.platform.startswith('win'):
+    ## need to add environ aug here ## required by windows verision Graphviz
+    ## maybe not needed
     os.environ["PATH"] += os.pathsep + 'D:/Program Files/Graphviz/bin'
-# global model_path
-# model_path
+
 
 import shutil
 import string
@@ -133,7 +134,7 @@ class NPRetro_App(QMainWindow, Ui_MainWindow):
         self.model_path = None
         # save buttom
         self.pushButton_save.clicked.connect(self.save_as_file)  # new add here
-        #
+        # data generated in the process
         self.routeList = None
         self.precursorList = None
         self.ADMET_list = None
@@ -141,12 +142,11 @@ class NPRetro_App(QMainWindow, Ui_MainWindow):
         self.derivative_list = None
         self.Thread_PredictDerivative = None
         self.Thread_ADMET = None
-        #add
+        # 'Retrosynthetic Route Prediction' area functions
         self.tableWidget_RouteList.setSortingEnabled(True)
         self.tableWidget_RouteList.cellClicked.connect(self.fill_single_route_list)
-        #self.tableWidget_RouteList.cellClicked.connect(self.show_synthesis_path)
-
-        self.tableWidget_PrecursorList.cellClicked.connect(self.fill_AMDET_table)
+        # 'Precursor Compound' area functions functions
+        self.tableWidget_PrecursorList.cellClicked.connect(self.fill_AMDET_table_click_compound)
 
     def load_model_path(self):
         options = QtWidgets.QFileDialog.Options()
@@ -155,7 +155,7 @@ class NPRetro_App(QMainWindow, Ui_MainWindow):
         self.model_path = fileName
         print(self.model_path)
 
-    def save_as_file(self):  # self.derivative_list 可能为none 可能为
+    def save_as_file(self):  # self.derivative_list 可能为none
         if isinstance(self.derivative_list, pd.DataFrame):
             if not self.derivative_list.empty:  # self.derivative_list不为None且不为空
 
@@ -166,17 +166,15 @@ class NPRetro_App(QMainWindow, Ui_MainWindow):
                 route_topk = self.ParametersUI.spinBox_Route_Number.value()
 
                 time = datetime.now().strftime("%m%d_%H%M%S")
-                file_name = f'derivative_list_{model_type}_{exp_topk}xx{iterations}_{time}'
+                file_name = f'route_list_{model_type}_{exp_topk}xx{iterations}_{time}'
                 destpath, filetype = QtWidgets.QFileDialog.getSaveFileName(self, "Select the save path", f"{file_name}",
                                                                            "csv Files (*.csv)")
-
                 if destpath:
                     folder_path = destpath.rsplit('/', 1)[0]
                     print(folder_path, filetype)
                     self.derivative_list.to_csv(destpath)
                     # self.DTI_list.to_csv(f'{folder_path}/DTI_list_{method}_{n_branch}xx{n_loop}_{time}.csv')
                     # self.ADMET_list.to_csv(f'{folder_path}/ADMET_list_{method}_{n_branch}xx{n_loop}_{time}.csv')
-
                 self.InforMsg('Finished')
             else:
                 self.WarnMsg('No result to save')
@@ -311,6 +309,7 @@ class NPRetro_App(QMainWindow, Ui_MainWindow):
         Draw.MolToFile(precursor_mol, 'temp/{}.png'.format(file_name))
         self.ChemicalImageUI.label_chem_image.setPixmap(QPixmap('temp/{}.png'.format(file_name)))
 ####################################################################
+
     def predict_compound_derivative(self):
 
         precursor_smiles_list = [self.listWidget_chem_list.item(x).text() for x in
@@ -332,14 +331,14 @@ class NPRetro_App(QMainWindow, Ui_MainWindow):
 
         self._clear_all()
         self.progressBar.setValue(30)
-        self.progressBar.setFormat('Predicting and Planing')
+        self.progressBar.setFormat('Multi-step Planing')
+        print('Step_1/2：Multi-step Planing')
         self.Thread_PredictDerivative = Thread_PredictDerivative(
             precursor_smiles_list, model_type, beam_size, exp_topk, iterations, route_topk, device, model_path)
 
         self.Thread_PredictDerivative._r.connect(self._set_derivative_list)
         self.Thread_PredictDerivative.start()
         self.Thread_PredictDerivative.finished.connect(self.fill_pred_route_list)
-        #add
 
     def get_pure_route_from_pred_full_route(self,full_route):
         '''
@@ -390,7 +389,7 @@ class NPRetro_App(QMainWindow, Ui_MainWindow):
             self._set_finished()
 
     def predict_ADMET(self, full_smi_lst):
-        print('Predicting AMDET')
+        print('Step_2/2: Predicting ADMET properties for all generated molecules.')
         self.progressBar.setValue(70)
         self.progressBar.setFormat('Predicting AMDET')
         self.Thread_PredictAMDET = Thread_PredictADMET(full_smi_lst)
@@ -400,31 +399,38 @@ class NPRetro_App(QMainWindow, Ui_MainWindow):
 
 
     def fill_single_route_list(self):
+        # show compounds and synthesis-path in the route clicked
         index = self.tableWidget_RouteList.currentRow()
         get_route = self.tableWidget_RouteList.item(index, 0).text()
+        # 1.show synthesis-path
         smi_lst = get_route.split('>')
         self.show_synthesis_path_from_route(smi_lst)
-        df_smi_lst = pd.DataFrame({' ':smi_lst})
-
+        # 2.show compounds
+        df_smi_lst = pd.DataFrame({' ' : smi_lst})
         self._set_table_widget(self.tableWidget_PrecursorList, df_smi_lst)
+        # 3.fill AMDET_table temporarily for target molecule
+        self.fill_AMDET_table(smi_lst[0])
+        # finished
         self.progressBar.setValue(100)
         self.progressBar.setFormat('Ready')
         self._set_finished()
 
 
-    def fill_AMDET_table(self):
+    def fill_AMDET_table_click_compound(self):
         index = self.tableWidget_PrecursorList.currentRow()
-        current_smiles = self.tableWidget_PrecursorList.item(index, 0).text()
-        print(current_smiles)
+        current_smi = self.tableWidget_PrecursorList.item(index, 0).text()
+        print('Current_SMILES', current_smi)
+        self.fill_AMDET_table(current_smi)
 
-        Physicochemical = utils.refine_compound_ADMET_property(self.ADMET_list, current_smiles,
+    def fill_AMDET_table(self, smi):
+        Physicochemical = utils.refine_compound_ADMET_property(self.ADMET_list, smi,
                                                                property_class='Physicochemical')
-        Absorption = utils.refine_compound_ADMET_property(self.ADMET_list, current_smiles, property_class='Absorption')
-        Distribution = utils.refine_compound_ADMET_property(self.ADMET_list, current_smiles,
+        Absorption = utils.refine_compound_ADMET_property(self.ADMET_list, smi, property_class='Absorption')
+        Distribution = utils.refine_compound_ADMET_property(self.ADMET_list, smi,
                                                             property_class='Distribution')
-        Metabolism = utils.refine_compound_ADMET_property(self.ADMET_list, current_smiles, property_class='Metabolism')
-        Excretion = utils.refine_compound_ADMET_property(self.ADMET_list, current_smiles, property_class='Excretion')
-        Toxicity = utils.refine_compound_ADMET_property(self.ADMET_list, current_smiles, property_class='Toxicity')
+        Metabolism = utils.refine_compound_ADMET_property(self.ADMET_list, smi, property_class='Metabolism')
+        Excretion = utils.refine_compound_ADMET_property(self.ADMET_list, smi, property_class='Excretion')
+        Toxicity = utils.refine_compound_ADMET_property(self.ADMET_list, smi, property_class='Toxicity')
 
         self.tableView_prop_1.setModel(TableModel(Physicochemical))
         self.tableView_prop_2.setModel(TableModel(Absorption))
@@ -446,7 +452,7 @@ class NPRetro_App(QMainWindow, Ui_MainWindow):
 
         current_path = os.path.dirname(__file__)
         for i in range(len(smi_lst)):
-            print(f'synthesis_path:{i + 1}/{len(smi_lst)}', '\n', smi_lst[i])
+            print(f'compound_in_synthesis_path_{i + 1}/{len(smi_lst)}', smi_lst[i])
             try:
                 mol = Chem.MolFromSmiles(smi_lst[i])
             except:

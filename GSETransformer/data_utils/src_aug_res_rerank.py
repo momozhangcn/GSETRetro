@@ -188,18 +188,22 @@ def compute_rank_rerank(prediction,beam_size, raw=False,alpha=1.0):
 
 
 if __name__ == "__main__":
-    smi = 'C=CC(C)(C)[C@@]12C[C@H]3c4nc5ccccc5c(=O)n4[C@H](C)C(=O)N3C1N(C(C)=O)c1ccccc12'.replace(' ', '')
-    # step_01 do atom map for src smi
-    mapped_smi = atom_map_src_smi(smi)
-    print(mapped_smi)
-    # step_02 do root-change aug for mapped src smi
-    aug_src1, _ = atom_mapped_src_aug(mapped_smi, 10)
-    print(aug_src1)
-    aug_src2, _ = atom_mapped_src_aug(smi, 10)
-    print(aug_src2)
-    # step_03 do prediction for root-change auged smi
-    # step_04 got result and rerank the result
-    pred_in = [aug_src1, aug_src2]
-    rank_pred, rank_score= compute_rank_rerank(pred_in, 10)
-    print(rank_pred)
-    print(rank_score)
+    # smi = 'C=CC(C)(C)[C@@]12C[C@H]3c4nc5ccccc5c(=O)n4[C@H](C)C(=O)N3C1N(C(C)=O)c1ccccc12'.replace(' ', '')
+    # # step_01 do atom map for src smi
+    # mapped_smi = atom_map_src_smi(smi)
+    # print(mapped_smi)
+    # # step_02 do root-change aug for mapped src smi
+    # aug_src1, _ = atom_mapped_src_aug(mapped_smi, 10)
+    # print(aug_src1)
+    # aug_src2, _ = atom_mapped_src_aug(smi, 10)
+    # print(aug_src2)
+    # # step_03 do prediction for root-change auged smi
+    # # step_04 got result and rerank the result
+    # pred_in = [aug_src1, aug_src2]
+    # rank_pred, rank_score= compute_rank_rerank(pred_in, 10)
+    # print(rank_pred)
+    # print(rank_score)
+    pad_reaction = 'C1(CCC(CC1)CBr)OC>>BrCC1CCC(CC1)O'
+    get_atomap_reaction = rxn_mapper.get_attention_guided_atom_maps([pad_reaction])  ## 传入列表，不可字符串
+    atomap_reaction = get_atomap_reaction[0]['mapped_rxn']
+    print(atomap_reaction)

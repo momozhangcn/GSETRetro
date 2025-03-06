@@ -7,12 +7,10 @@ Created on Mon Mar  4 14:54:21 2024
 
 import os
 import sys
-
 if sys.platform.startswith('win'):
     ## need to add environ aug here ## required by windows verision Graphviz
     ## maybe not needed
     os.environ["PATH"] += os.pathsep + 'D:/Program Files/Graphviz/bin'
-
 
 import shutil
 import string
@@ -24,6 +22,7 @@ import pandas as pd
 from rdkit import Chem
 from rdkit.Chem import Draw
 from graphviz import Digraph
+from PIL import Image, ImageDraw,ImageFont
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtGui import QPixmap
@@ -67,7 +66,7 @@ class TableModel(QtCore.QAbstractTableModel):
         return None
 
 
-class Thread_PredictDerivative(QThread):
+class Thread_MultiStepPlanning(QThread):
     _r = QtCore.pyqtSignal(pd.DataFrame)
 
     def __init__(self, precursor_smiles_list, model_type, beam_size, exp_topk, iterations, route_topk, device, model_path):
@@ -81,29 +80,15 @@ class Thread_PredictDerivative(QThread):
         self.device = device
         self.send_model_path = model_path
     def run(self):
-        derivative_list = utils.predict_compound_derivative_GSETransformer(self.smiles_list, self.model_type,
+        pathway_list = utils.predict_compound_derivative_GSETransformer(self.smiles_list, self.model_type,
                     self.beam_size, self.exp_topk,self.iterations, self.route_topk,  self.device, self.send_model_path)
 
-        self._r.emit(derivative_list)
-
-
-
-class Thread_PredictADMET(QThread):
-    _r = QtCore.pyqtSignal(pd.DataFrame)
-
-    def __init__(self, smiles_list):
-        super().__init__()
-        self.smiles_list = smiles_list
-
-    def run(self):
-        admet_list = utils.predict_compound_ADMET_property(smiles_list=self.smiles_list)
-        self._r.emit(admet_list)
-
+        self._r.emit(pathway_list)
 
 class NPRetro_App(QMainWindow, Ui_MainWindow):
 
     def __init__(self, parent=None):
-        super(NPRetro_App, self).__init__(parent)   #NPDS_App
+        super(NPRetro_App, self).__init__(parent)
         self.setupUi(self)
         self.setWindowTitle("NP Retrosynthesis Screening")
         self.progressBar.setValue(100)
@@ -127,7 +112,7 @@ class NPRetro_App(QMainWindow, Ui_MainWindow):
         self.pushButton_chem_clear.clicked.connect(self.listWidget_chem_list.clear)
         self.pushButton_chem_show.clicked.connect(self.show_chemical_image)
         # predict button
-        self.pushButton_chem_predict.clicked.connect(self.predict_compound_derivative)
+        self.pushButton_chem_predict.clicked.connect(self.do_multi_step_planning)
         # setting button
         self.pushButton_setting.clicked.connect(self.ParametersUI.open)
         self.ParametersUI.button_ModelPath.clicked.connect(self.load_model_path)
@@ -135,18 +120,15 @@ class NPRetro_App(QMainWindow, Ui_MainWindow):
         # save buttom
         self.pushButton_save.clicked.connect(self.save_as_file)  # new add here
         # data generated in the process
-        self.routeList = None
-        self.precursorList = None
-        self.ADMET_list = None
         #
-        self.derivative_list = None
-        self.Thread_PredictDerivative = None
+        self.pathway_list = None
+        self.Thread_MultiStepPlanning = None
         self.Thread_ADMET = None
         # 'Retrosynthetic Route Prediction' area functions
         self.tableWidget_RouteList.setSortingEnabled(True)
-        self.tableWidget_RouteList.cellClicked.connect(self.fill_single_route_list)
+        self.tableWidget_RouteList.cellClicked.connect(self.fill_table_single_route_list)
         # 'Precursor Compound' area functions functions
-        self.tableWidget_PrecursorList.cellClicked.connect(self.fill_AMDET_table_click_compound)
+        # self.tableWidget_CompoundsList.cellClicked.connect(self.fill_AMDET_table_click_compound)
 
     def load_model_path(self):
         options = QtWidgets.QFileDialog.Options()
@@ -155,12 +137,12 @@ class NPRetro_App(QMainWindow, Ui_MainWindow):
         self.model_path = fileName
         print(self.model_path)
 
-    def save_as_file(self):  # self.derivative_list 可能为none
-        if isinstance(self.derivative_list, pd.DataFrame):
-            if not self.derivative_list.empty:  # self.derivative_list不为None且不为空
+    def save_as_file(self):  # self.pathway_list 可能为none
+        if isinstance(self.pathway_list, pd.DataFrame):
+            if not self.pathway_list.empty:  # self.pathway_list不为None且不为空
 
                 model_type = self.ParametersUI.comboBox_Model_Type.currentText()
-                beam_size = self.ParametersUI.spinBox_Beam_Size.value()
+                #beam_size = self.ParametersUI.spinBox_Beam_Size.value()
                 exp_topk = self.ParametersUI.spinBox_Expansion_Number.value()
                 iterations = self.ParametersUI.spinBox_Iterations_Number.value()
                 route_topk = self.ParametersUI.spinBox_Route_Number.value()
@@ -172,9 +154,7 @@ class NPRetro_App(QMainWindow, Ui_MainWindow):
                 if destpath:
                     folder_path = destpath.rsplit('/', 1)[0]
                     print(folder_path, filetype)
-                    self.derivative_list.to_csv(destpath)
-                    # self.DTI_list.to_csv(f'{folder_path}/DTI_list_{method}_{n_branch}xx{n_loop}_{time}.csv')
-                    # self.ADMET_list.to_csv(f'{folder_path}/ADMET_list_{method}_{n_branch}xx{n_loop}_{time}.csv')
+                    self.pathway_list.to_csv(destpath)
                 self.InforMsg('Finished')
             else:
                 self.WarnMsg('No result to save')
@@ -228,18 +208,16 @@ class NPRetro_App(QMainWindow, Ui_MainWindow):
                 widget.setItem(i, j, item)
 
 
-    def _set_derivative_list(self, msg):
-        self.derivative_list = msg
-
-    def _set_AMDET_list(self, msg):
-        self.ADMET_list = msg
+    def _set_pathway_list(self, msg):
+        self.pathway_list = msg
 
     def _clear_all(self):
-        self.derivative_list = None
-        self.ADMET_list = None
+        self.pathway_list = None
         # clear all data
-        self.tableWidget_PrecursorList.clear()
         self.tableWidget_RouteList.clear()
+        self.tableWidget_CompoundsList.clear()
+        self.tableWidget_EC.clear()
+        self.label_7.clear()
 
         # setDisabled all pushButton
         self.pushButton_chem_add.setDisabled(True)
@@ -264,7 +242,7 @@ class NPRetro_App(QMainWindow, Ui_MainWindow):
         self.pushButton_save.setDisabled(False)
 
     def add_precursor_to_list(self):
-        precursor_smi = self.plainTextEdit_chem_inp.toPlainText()
+        precursor_smi = (self.plainTextEdit_chem_inp.toPlainText()).replace(' ', '')# if blank exists
         if precursor_smi == '':
             self.ErrorMsg('Invalid input molecule')
             return
@@ -273,6 +251,7 @@ class NPRetro_App(QMainWindow, Ui_MainWindow):
             self.ErrorMsg('Invalid input molecule')
             return
         self.listWidget_chem_list.addItem(Chem.MolToSmiles(precursor_mol))
+        self.plainTextEdit_chem_inp.clear()
         self.InforMsg('Finished')
 
     def upload_precursor_to_list(self):
@@ -306,41 +285,46 @@ class NPRetro_App(QMainWindow, Ui_MainWindow):
         self.ChemicalImageUI.show()
         precursor_mol = Chem.MolFromSmiles(precursor_smi)
         file_name = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(10))
-        Draw.MolToFile(precursor_mol, 'temp/{}.png'.format(file_name))
-        self.ChemicalImageUI.label_chem_image.setPixmap(QPixmap('temp/{}.png'.format(file_name)))
+        Draw.MolToFile(precursor_mol, f'data/temp_data/{file_name}.png')
+        self.ChemicalImageUI.label_chem_image.setPixmap(QPixmap(f'data/temp_data/{file_name}.png'))
 ####################################################################
 
-    def predict_compound_derivative(self):
+    def do_multi_step_planning(self):
 
         precursor_smiles_list = [self.listWidget_chem_list.item(x).text() for x in
                                  range(self.listWidget_chem_list.count())]
         if len(precursor_smiles_list) == 0:
-            self.ErrorMsg('Precursor List or Target List is empty')
+            self.ErrorMsg('No valid input,SMILES List is empty')
             return
 
         model_type = self.ParametersUI.comboBox_Model_Type.currentText()
         device = self.ParametersUI.comboBox_Device.currentText()
-        beam_size = self.ParametersUI.spinBox_Beam_Size.value()
         exp_topk = self.ParametersUI.spinBox_Expansion_Number.value()
+        # beam_size = self.ParametersUI.spinBox_Beam_Size.value()
+        beam_size = exp_topk
         iterations = self.ParametersUI.spinBox_Iterations_Number.value()
         route_topk = self.ParametersUI.spinBox_Route_Number.value()
         model_path = self.model_path
 
-        if exp_topk > beam_size: # kee exp_topk <= beam_size
-            exp_topk = beam_size
-
         self._clear_all()
         self.progressBar.setValue(30)
         self.progressBar.setFormat('Multi-step Planing')
-        print('Step_1/2：Multi-step Planing')
-        self.Thread_PredictDerivative = Thread_PredictDerivative(
-            precursor_smiles_list, model_type, beam_size, exp_topk, iterations, route_topk, device, model_path)
+        print('>>> Multi-step Planing')
 
-        self.Thread_PredictDerivative._r.connect(self._set_derivative_list)
-        self.Thread_PredictDerivative.start()
-        self.Thread_PredictDerivative.finished.connect(self.fill_pred_route_list)
+        if model_path == None or not os.path.exists(model_path):
+            self.ErrorMsg('Please specify a valid model path')
+            self.progressBar.setValue(100)
+            self.progressBar.setFormat('Ready')
+            self._set_finished()
 
-    def get_pure_route_from_pred_full_route(self,full_route):
+        else:
+            self.Thread_MultiStepPlanning = Thread_MultiStepPlanning(
+                precursor_smiles_list, model_type, beam_size, exp_topk, iterations, route_topk, device, model_path)
+            self.Thread_MultiStepPlanning._r.connect(self._set_pathway_list)
+            self.Thread_MultiStepPlanning.start()
+            self.Thread_MultiStepPlanning.finished.connect(self.fill_table_route_prediction)
+
+    def get_pure_route_from_pred_full_route(self, full_route):
         '''
         :param s: 'smiles1>score1>smiles2|smiles2>score2>smiles3|smiles3>score3>smiles4...'
         :return: [smiles1, smiles2, smiles3, ...]
@@ -356,181 +340,119 @@ class NPRetro_App(QMainWindow, Ui_MainWindow):
             smi_lst.append(line[-1])
             pure_route += (line[-1] + ">")
         pure_route = pure_route.strip(">")
+
         return smi_lst, pure_route
 
-    def fill_pred_route_list(self):
-        if self.derivative_list.empty:
-            self.ErrorMsg('No valid prediction for current input precursor compound')
-
+    def fill_table_route_prediction(self):
+        if self.pathway_list.empty:
+            self.ErrorMsg('No valid prediction for current molecule')
             self.progressBar.setValue(100)
             self.progressBar.setFormat('Ready')
             self._set_finished()
         else:
-            raw_route_lst = list(self.derivative_list['pathway_prediction'])
-            full_smi_lst = []
-            route_lst = []
-            for r in raw_route_lst:
-                smi_lst, route = self.get_pure_route_from_pred_full_route(r)
-                for smi in smi_lst:
-                    if smi not in full_smi_lst:
-                        full_smi_lst.append(smi)
-                route_lst.append(route)
-
-            df_routeList = pd.DataFrame({' ':route_lst})
-
-
+            raw_route_lst = list(self.pathway_list['pathway_prediction']) # GUI/multi_step_plan_4GUI.py
+            df_routeList = pd.DataFrame({' ': raw_route_lst})
             self._set_table_widget(self.tableWidget_RouteList, df_routeList)
             self.tableWidget_RouteList.setCurrentCell(0, 0)
-
-            self.predict_ADMET(full_smi_lst)
-
             self.progressBar.setValue(100)
             self.progressBar.setFormat('Ready')
             self._set_finished()
+            self.InforMsg('Finished')
 
-    def predict_ADMET(self, full_smi_lst):
-        print('Step_2/2: Predicting ADMET properties for all generated molecules.')
-        self.progressBar.setValue(70)
-        self.progressBar.setFormat('Predicting AMDET')
-        self.Thread_PredictAMDET = Thread_PredictADMET(full_smi_lst)
-        self.Thread_PredictAMDET._r.connect(self._set_AMDET_list)
-        self.Thread_PredictAMDET.start()
-        #self.Thread_PredictAMDET.finished.connect(self.fill_single_route_list)
-
-
-    def fill_single_route_list(self):
-        # show compounds and synthesis-path in the route clicked
+    def fill_table_single_route_list(self):
+        # show compounds and synthesis-path for selected pathway
+        # 0. get
         index = self.tableWidget_RouteList.currentRow()
-        get_route = self.tableWidget_RouteList.item(index, 0).text()
-        # 1.show synthesis-path
-        smi_lst = get_route.split('>')
-        self.show_synthesis_path_from_route(smi_lst)
-        # 2.show compounds
-        df_smi_lst = pd.DataFrame({' ' : smi_lst})
-        self._set_table_widget(self.tableWidget_PrecursorList, df_smi_lst)
-        # 3.fill AMDET_table temporarily for target molecule
-        self.fill_AMDET_table(smi_lst[0])
-        # finished
-        self.progressBar.setValue(100)
-        self.progressBar.setFormat('Ready')
-        self._set_finished()
+        get_full_route = self.tableWidget_RouteList.item(index, 0).text()
+        # 1. analysis
+        all_paths = utils.find_all_paths(get_full_route)
+        all_unique_mole_node = list(set([element for sublist in all_paths for element in sublist]))
+        # 2. EC Number Predicting
+        rxn_EC_dict = None
+        if_ec_predict = self.ParametersUI.comboBox_ECPredict.currentText()
+        if if_ec_predict == 'Yes':
+            print('Reaction EC Number Predicting')
+            self.progressBar.setValue(30)
+            self.progressBar.setFormat('EC Number Predicting')
+            df_all_ec, rxn_EC_dict = utils.predict_rxns_EC_number(get_full_route)
+            self._set_table_widget(self.tableWidget_EC, df_all_ec)
+        else:
+            self.tableWidget_EC.clear()
 
 
-    def fill_AMDET_table_click_compound(self):
-        index = self.tableWidget_PrecursorList.currentRow()
-        current_smi = self.tableWidget_PrecursorList.item(index, 0).text()
-        print('Current_SMILES', current_smi)
-        self.fill_AMDET_table(current_smi)
+        # 3. get_pure_route_from_pred_full_route
+        smi_lst, route = self.get_pure_route_from_pred_full_route(get_full_route)
+        df_smi_lst = pd.DataFrame({' ': smi_lst})
+        self._set_table_widget(self.tableWidget_CompoundsList, df_smi_lst)
 
-    def fill_AMDET_table(self, smi):
-        Physicochemical = utils.refine_compound_ADMET_property(self.ADMET_list, smi,
-                                                               property_class='Physicochemical')
-        Absorption = utils.refine_compound_ADMET_property(self.ADMET_list, smi, property_class='Absorption')
-        Distribution = utils.refine_compound_ADMET_property(self.ADMET_list, smi,
-                                                            property_class='Distribution')
-        Metabolism = utils.refine_compound_ADMET_property(self.ADMET_list, smi, property_class='Metabolism')
-        Excretion = utils.refine_compound_ADMET_property(self.ADMET_list, smi, property_class='Excretion')
-        Toxicity = utils.refine_compound_ADMET_property(self.ADMET_list, smi, property_class='Toxicity')
-
-        self.tableView_prop_1.setModel(TableModel(Physicochemical))
-        self.tableView_prop_2.setModel(TableModel(Absorption))
-        self.tableView_prop_3.setModel(TableModel(Distribution))
-        self.tableView_prop_4.setModel(TableModel(Metabolism))
-        self.tableView_prop_5.setModel(TableModel(Excretion))
-        self.tableView_prop_6.setModel(TableModel(Toxicity))
-        self.progressBar.setValue(100)
-        self.progressBar.setFormat('Ready')
-        self._set_finished()
-
-    #### new add here
-    def show_synthesis_path_from_route(self,smi_lst):
-        # 生成分子图，并生成路径图
+        # 4. draw pathway
+        node_id_dict = {}
+        for node_id in range(len(all_unique_mole_node)):
+            node_id_dict[all_unique_mole_node[node_id]] = node_id
+        current_path = os.path.dirname(__file__)
         G = Digraph('G', filename='data/temp_data/return_synthesis_path')
         G.attr('node', shape='box')
         G.format = 'png'
         G_save_path = 'data/temp_data/return_synthesis_path.png'
 
-        current_path = os.path.dirname(__file__)
-        for i in range(len(smi_lst)):
-            print(f'compound_in_synthesis_path_{i + 1}/{len(smi_lst)}', smi_lst[i])
-            try:
-                mol = Chem.MolFromSmiles(smi_lst[i])
-            except:
-                print('invalid molecular SMILES string')
-            else:
-                save_path = f'{current_path}/data/temp_data/smi{i}-mol-graph.png'
-                Draw.MolToFile(mol, save_path, size=(400, 400))
-                ## G.node needs the absolute paths, otherwise something wrong
-                ## 需要读取绝对路径，不然可能报错。
-                G.node(name=smi_lst[i], image=save_path, label='', labelloc='top')  # label=smi_lst[i] f'mol{i + 1}'
-                if i >= 1:
-                    G.edge(smi_lst[i - 1], smi_lst[i])  # 可加label # , label=f"no-level-expansion"
+        already_node_lst = []
+        for single_path in all_paths:
+            for i in range(len(single_path)):
+                if single_path[i].find('kegg') == -1:
+                    try:
+                        mol = Chem.MolFromSmiles(single_path[i])
+                    except:
+                        print('invalid molecular SMILES string')
+                    else:
+                        node_id = node_id_dict[single_path[i]]
+                        save_path = f'{current_path}/data/temp_data/smi{node_id}-mol-graph.png'
+                        Draw.MolToFile(mol, save_path, size=(400, 400))
+                        if single_path[i] not in already_node_lst:
+                            already_node_lst.append(single_path[i])
+                            G.node(name=single_path[i], image=save_path, label='', labelloc='top')
+                            if i >= 1:
+                                if rxn_EC_dict != None:
+                                    top1_ec = rxn_EC_dict[single_path[i - 1]]
+                                    top1_ec = top1_ec.split('/')[0]
+                                    G.edge(single_path[i - 1], single_path[i], label=f'{top1_ec}')
+                                else:
+                                    G.edge(single_path[i - 1], single_path[i])
+
+                else:
+                    node_id = node_id_dict[single_path[i - 1]]
+                    save_path = f'{current_path}/data/temp_data/smi{node_id}-mol-graph.png'
+                    open_image2change = Image.open(save_path)
+                    draw = ImageDraw.Draw(open_image2change)
+                    text = '↓' + '\n' + f"→{single_path[i].replace('keggpath=', ' ')}"
+                    text_font = ImageFont.truetype("arial.ttf", size=20)
+                    text_color = (0, 0, 0)
+                    outline_color = (255, 0, 0)
+                    position = (50, 350)
+                    draw.text(position, text, font=text_font, fill=text_color, outline=outline_color)
+                    open_image2change.save(save_path)
+
         G.render()
         load_image = QPixmap(G_save_path)
         width = load_image.width()
         height = load_image.height()  ##获取图片高度
-        print('original pic size', width, height)
-        print('label size', self.label_7.width(), self.label_7.height())
+        print('show_pathway: original pic size', width, height)
+        print('show_pathway: label size', self.label_7.width(), self.label_7.height())
         ratio = (self.label_7.width() / width)
         new_width = int(width * ratio * 0.9)  ##定义新图片的宽和高
         new_height = int(height * ratio * 0.9)
-        print('resized pic size', new_width, new_height)
+        print('show_pathway: resized pic size', new_width, new_height)
         pic2show = QtGui.QPixmap(G_save_path).scaled(new_width, new_height, Qt.KeepAspectRatioByExpanding,
                                                      Qt.SmoothTransformation)
         self.label_7.setPixmap(pic2show)
-    # abandon # original way to show show_synthesis_path
-    # def show_synthesis_path(self):
-    #     df = self.derivative_list
-    #     index = self.tableWidget_dta_out.currentRow()
-    #     current_smiles = self.tableWidget_dta_out.item(index, 0).text()
-    #     print(f'get_synthesis_path for current_SMILES:{current_smiles}')
-    #     # 获取当前分子的合成路径
-    #     search_line = df[df['derivant'].isin([current_smiles])].to_dict('records')
-    #     smi_lst = []
-    #     smi_lst.append(current_smiles)
-    #     while len(search_line) != 0:  # 有对应前体。读取前体
-    #         search_result = search_line[0]['precursor']
-    #         smi_lst.insert(0, search_result)
-    #         get_smiles = search_result
-    #         search_line = df[df['derivant'].isin([get_smiles])].to_dict('records')
-    #     # 生成分子图，并生成路径图
-    #     G = Digraph('G', filename='temp/return_synthesis_path')
-    #     G.attr('node', shape='box')
-    #     G.format = 'png'
-    #     G_save_path = 'temp/return_synthesis_path.png'
-    #
-    #     current_path = sys.path[0]
-    #     for i in range(len(smi_lst)):
-    #         print(f'synthesis_path:{i + 1}/{len(smi_lst)}', '\n', smi_lst[i])
-    #         try:
-    #             mol = Chem.MolFromSmiles(smi_lst[i])
-    #         except:
-    #             print('invalid molecular SMILES string')
-    #         else:
-    #             save_path = f'{current_path}/temp/smi{i}-mol-graph.png'
-    #             Draw.MolToFile(mol, save_path, size=(400, 400))
-    #             ## G.node 需要读取绝对路径，不然可能报错。
-    #             G.node(name=smi_lst[i], image=save_path, label='', labelloc='top')  # label=smi_lst[i] f'mol{i + 1}'
-    #             if i >= 1:
-    #                 G.edge(smi_lst[i - 1], smi_lst[i])  # 可加label # , label=f"no-level-expansion"
-    #     G.render()
-    #     load_image = QPixmap(G_save_path)
-    #     width = load_image.width()
-    #     height = load_image.height()  ##获取图片高度
-    #     print('original pic size', width, height)
-    #     print('label size', self.label_7.width(), self.label_7.height())
-    #     ratio = (self.label_7.width() / width)
-    #     new_width = int(width * ratio * 0.9)  ##定义新图片的宽和高
-    #     new_height = int(height * ratio * 0.9)
-    #     print('resized pic size', new_width, new_height)
-    #     pic2show = QtGui.QPixmap(G_save_path).scaled(new_width, new_height, Qt.KeepAspectRatioByExpanding,
-    #                                                  Qt.SmoothTransformation)
-    #     self.label_7.setPixmap(pic2show)
 
+        self.progressBar.setValue(100)
+        self.progressBar.setFormat('Ready')
+        self._set_finished()
+
+# pyuic5 GUI/ui/NPDemo.ui -o GUI/uic/NPDemo.py
 
 if __name__ == '__main__':
     import sys
-
     app = QApplication(sys.argv)
     ui = NPRetro_App()
     ui.show()

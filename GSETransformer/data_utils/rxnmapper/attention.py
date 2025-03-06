@@ -7,12 +7,16 @@ This module contains all of the helper methods needed to convert the attention m
 separating on reactants and products, including special tokens and not including special tokens, in the atom
 domain / in the token domain, and accounting for adjacent atoms in molecules.
 """
+import os
+import sys
+if os.path.dirname(__file__) not in sys.path:
+    sys.path.append(os.path.dirname(__file__))
 import logging
 from typing import List, Optional
 
 import numpy as np
 
-from .smiles_utils import (
+from smiles_utils import (
     get_atom_types_smiles,
     get_mask_for_tokens,
     number_tokens,

@@ -21,13 +21,13 @@ if __name__ == '__main__':
     parser.add_argument('-e', '--exp_topk',             type=int, default=10)
     parser.add_argument('-k', '--route_topk',           type=int, default=10)
     parser.add_argument('-s', '--beam_size',            type=int, default=10)
-    parser.add_argument('-m', '--model_type', type=str, default='ensemble',
-                        choices=['ensemble', 'retroformer', 'g2s', 'retriever_only', 'megan',
-                                 'GSETransformer', 'Chemformer', 'AugTransformer','TTWTransformer','GTA'])#
+    parser.add_argument('-m', '--model_type', type=str, default='GSETransformer',
+                        choices=['AugTransformer', 'Chemformer', 'GTA', 'megan', 'TTWTransformer',
+                        'GSETransformer', 'retriever_only', 'GSETransformer+Retriver'])
     parser.add_argument('-mp', '--model_path',          type=str, default='None')
     parser.add_argument('-r', '--retrieval',            type=str, default='true', choices=['true', 'false'])
-    parser.add_argument('-pr', '--path_retrieval',      type=str, default='false', choices=['true', 'false'])#
-    parser.add_argument('-d', '--retrieval_db',         type=str, default='data/train_canonicalized_READRetro.txt')#train_canonicalized_clean
+    parser.add_argument('-pr', '--path_retrieval',      type=str, default='true', choices=['true', 'false'])#
+    parser.add_argument('-d', '--retrieval_db',         type=str, default='data/train_canonicalized_full.txt')#train_canonicalized_clean
     parser.add_argument('-pd', '--path_retrieval_db',   type=str, default='data/pathways.pickle')
     parser.add_argument('-c', '--device',               type=str, default='cuda', choices=['cuda', 'cpu'])
     parser.add_argument('-n', '--num_threads',          type=int, default=1)

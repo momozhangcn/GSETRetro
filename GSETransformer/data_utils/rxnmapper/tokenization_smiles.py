@@ -12,7 +12,7 @@ import re
 
 from transformers import BertTokenizer
 
-from .smiles_utils import SMI_REGEX_PATTERN
+from smiles_utils import SMI_REGEX_PATTERN
 
 logger = logging.getLogger(__name__)
 

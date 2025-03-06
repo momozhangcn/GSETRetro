@@ -14,6 +14,7 @@ class ParametersUI(QtWidgets.QDialog, Ui_Dialog):
         self.setWindowTitle("Setting")
         self.comboBox_Model_Type.addItems(['GSETransformer', 'GSETransformer+Retriver'])
         self.comboBox_Device.addItems(['CUDA', 'CPU'])
+        self.comboBox_ECPredict.addItems(['Yes', 'No'])
 
         
         

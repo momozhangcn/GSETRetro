@@ -23,6 +23,24 @@ def neutralize_atoms(smi):
     except:
         return smi
 
+def canonicalize_smiles(smiles):
+    smiles = smiles.strip().replace(' ', '')
+    try:
+        mol = Chem.MolFromSmiles(smiles)
+    except:
+        return ''
+    else:
+        if mol is not None:
+            [atom.ClearProp('molAtomMapNumber') for atom in mol.GetAtoms() if atom.HasProp('molAtomMapNumber')]
+            try:
+                smi = Chem.MolToSmiles(mol, isomericSmiles=True, canonical=True)
+            except:
+                return ''
+            else:
+                return smi
+        else:
+            return ''
+
 def kegg_search(smi,kegg_df):
     extract = kegg_df[kegg_df['SMILES'] == smi]
     if not len(extract):
@@ -80,56 +98,24 @@ class pathRetriever:
         return [self.special_token] if id != None else []    # if some compounds do not contain in pathways although in compounds, change the condition 
 
 
-# def run_path_retriever(product, path_retriever, model_type, model_retroformer, model_g2s, args_retroformer, args_g2s,
-#                   vocab, vocab_tokens, device, expansion_topk):
-#     isPathknown = path_retriever.retrieve(product)
-#     if isPathknown:
-#         res_dict = {'reactants': isPathknown}
-#         res_dict['scores'] = [1. for _ in res_dict['reactants']]
-#         res_dict['retrieved'] = [True for _ in res_dict['reactants']]
-#         res_dict['templates'] = [None for _ in res_dict['scores']]
-#     else:
-#         res_dict = run_ensemble(product, model_type, model_retroformer, model_g2s, args_retroformer, args_g2s,
-#                                 vocab, vocab_tokens, device, expansion_topk)
-#     return res_dict
+def run_path_retriever_GSET(product, path_retriever, translator, opt):
+    isPathknown = path_retriever.retrieve(product)
+    if isPathknown:
+        res_dict = {'reactants': isPathknown}
+        res_dict['scores'] = [1. for _ in res_dict['reactants']]
+        res_dict['retrieved'] = [True for _ in res_dict['reactants']]
+        res_dict['templates'] = [None for _ in res_dict['scores']]
 
+        _res_dict = run_GSET_translate(product, translator, opt)
+        res_dict['reactants'].extend(_res_dict['reactants'])
+        res_dict['scores'].extend(_res_dict['scores'])
+        res_dict['retrieved'].extend(_res_dict['retrieved'])
+        res_dict['templates'] = [None for _ in res_dict['scores']]
 
-# def run_retriever(product, retriever, model_type, model_retroformer, model_g2s, args_retroformer, args_g2s,
-#                   vocab, vocab_tokens, device, expansion_topk):
-#     reactant_list = retriever.retrieve(product)
-#     if reactant_list is not None:
-#         res_dict = {'reactants': reactant_list}
-#         res_dict['scores'] = [1. for _ in res_dict['reactants']]
-#         res_dict['retrieved'] = [True for _ in res_dict['reactants']]
-#         _res_dict = run_ensemble(product, model_type, model_retroformer, model_g2s, args_retroformer, args_g2s,
-#                                  vocab, vocab_tokens, device, expansion_topk)
-#
-#         res_dict['reactants'].extend(_res_dict['reactants'])
-#         res_dict['scores'].extend(_res_dict['scores'])
-#         res_dict['retrieved'].extend(_res_dict['retrieved'])
-#         res_dict['templates'] = [None for _ in res_dict['scores']]
-#
-#     else:
-#         res_dict = run_ensemble(product, model_type, model_retroformer, model_g2s, args_retroformer, args_g2s,
-#                                 vocab, vocab_tokens, device, expansion_topk)
-#     return res_dict
-def canonicalize_smiles(smiles):
-    smiles = smiles.strip().replace(' ', '')
-    try:
-        mol = Chem.MolFromSmiles(smiles)
-    except:
-        return ''
     else:
-        if mol is not None:
-            [atom.ClearProp('molAtomMapNumber') for atom in mol.GetAtoms() if atom.HasProp('molAtomMapNumber')]
-            try:
-                smi = Chem.MolToSmiles(mol, isomericSmiles=True, canonical=True)
-            except:
-                return ''
-            else:
-                return smi
-        else:
-            return ''
+        res_dict = run_GSET_translate(product, translator, opt)
+    return res_dict
+
 
 def run_retriever_GSET(product, retriever, translator, opt):
     get_reactant_list = retriever.retrieve(product)
@@ -159,51 +145,80 @@ def run_retriever_GSET(product, retriever, translator, opt):
         res_dict['scores'].extend(filterd_score)
         res_dict['retrieved'].extend(filterd_retrieved)
         res_dict['templates'] = [None for _ in res_dict['scores']]
-        # if not remove duplication
-        # res_dict['reactants'].extend(_res_dict['reactants'])
-        # res_dict['scores'].extend(_res_dict['scores'])
-        # res_dict['retrieved'].extend(_res_dict['retrieved'])
-        # res_dict['templates'] = [None for _ in res_dict['scores']]
 
     else:
-        #just retriver
-        # reactant_list = ['null']
-        # res_dict = {'reactants': reactant_list}
-        # res_dict['scores'] = [1. for _ in res_dict['reactants']]
-        # res_dict['retrieved'] = [True for _ in res_dict['reactants']]
-        # res_dict['templates'] = [None for _ in res_dict['scores']]
-
         # just GSET_translate
         res_dict = run_GSET_translate(product, translator, opt)
     return res_dict
 
 
-# def run_both_retriever(product, path_retriever, retriever, model_type, model_retroformer, model_g2s, args_retroformer, args_g2s,
-#                   vocab, vocab_tokens, device, expansion_topk):
-#     isPathknown = path_retriever.retrieve(product)
-#     if isPathknown:
-#         res_dict = {'reactants': isPathknown}
-#         res_dict['scores'] = [1. for _ in res_dict['reactants']]
-#         res_dict['retrieved'] = [True for _ in res_dict['reactants']]
-#         res_dict['templates'] = [None for _ in res_dict['scores']]
-#         return res_dict
-#
-#     reactant_list = retriever.retrieve(product)
-#     if reactant_list is not None:
-#         res_dict = {'reactants': reactant_list}
-#         res_dict['scores'] = [1. for _ in res_dict['reactants']]
-#         res_dict['retrieved'] = [True for _ in res_dict['reactants']]
-#         _res_dict = run_ensemble(product, model_type, model_retroformer, model_g2s, args_retroformer, args_g2s,
-#                                  vocab, vocab_tokens, device, expansion_topk)
-#
-#         res_dict['reactants'].extend(_res_dict['reactants'])
-#         res_dict['scores'].extend(_res_dict['scores'])
-#         res_dict['retrieved'].extend(_res_dict['retrieved'])
-#         res_dict['templates'] = [None for _ in res_dict['scores']]
-#     else:
-#         res_dict = run_ensemble(product, model_type, model_retroformer, model_g2s, args_retroformer, args_g2s,
-#                                 vocab, vocab_tokens, device, expansion_topk)
-#     return res_dict
+
+def run_both_retriever_GSET(product, path_retriever, retriever, translator, opt):
+    isPathknown = path_retriever.retrieve(product)
+    if isPathknown:
+        res_dict = {'reactants': isPathknown}
+        res_dict['scores'] = [1. for _ in res_dict['reactants']]
+        res_dict['retrieved'] = [True for _ in res_dict['reactants']]
+        res_dict['templates'] = [None for _ in res_dict['scores']]
+
+        reactant_list = retriever.retrieve(product)
+        if reactant_list is not None:
+            res_dict['reactants'].extend(reactant_list)
+            res_dict['scores'] = [1. for _ in res_dict['reactants']]
+            res_dict['retrieved'] = [True for _ in res_dict['reactants']]
+
+            _res_dict = run_GSET_translate(product, translator, opt)
+
+            filterd_smi = []
+            filterd_score = []
+            filterd_retrieved = []
+            # essential # remove duplication
+            for smi, score, retrieved in zip(_res_dict['reactants'], _res_dict['scores'], _res_dict['retrieved']):
+                if smi not in res_dict['reactants']:
+                    filterd_smi.append(smi)
+                    filterd_score.append(score)
+                    filterd_retrieved.append(retrieved)
+
+            res_dict['reactants'].extend(filterd_smi)
+            res_dict['scores'].extend(filterd_score)
+            res_dict['retrieved'].extend(filterd_retrieved)
+            res_dict['templates'] = [None for _ in res_dict['scores']]
+
+        else:
+            _res_dict = run_GSET_translate(product, translator, opt)
+            res_dict['reactants'].extend(_res_dict['reactants'])
+            res_dict['scores'].extend(_res_dict['scores'])
+            res_dict['retrieved'].extend(_res_dict['retrieved'])
+            res_dict['templates'] = [None for _ in res_dict['scores']]
+
+    else:
+        reactant_list = retriever.retrieve(product)
+        if reactant_list is not None:
+            res_dict = {'reactants': reactant_list}
+            res_dict['scores'] = [1. for _ in res_dict['reactants']]
+            res_dict['retrieved'] = [True for _ in res_dict['reactants']]
+            _res_dict = run_GSET_translate(product, translator, opt)
+
+            filterd_smi = []
+            filterd_score = []
+            filterd_retrieved = []
+            # essential # remove duplication
+            for smi, score, retrieved in zip(_res_dict['reactants'], _res_dict['scores'], _res_dict['retrieved']):
+                if smi not in res_dict['reactants']:
+                    filterd_smi.append(smi)
+                    filterd_score.append(score)
+                    filterd_retrieved.append(retrieved)
+
+            res_dict['reactants'].extend(filterd_smi)
+            res_dict['scores'].extend(filterd_score)
+            res_dict['retrieved'].extend(filterd_retrieved)
+            res_dict['templates'] = [None for _ in res_dict['scores']]
+
+        else:
+            res_dict = run_GSET_translate(product, translator, opt)
+    return res_dict
+
+
 
 def run_retriever_only(product, path_retriever, retriever):
     isPathknown = path_retriever.retrieve(product)

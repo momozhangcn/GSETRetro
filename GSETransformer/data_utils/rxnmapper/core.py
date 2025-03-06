@@ -21,9 +21,9 @@ from rxn.chemutils.reaction_smiles import (
 )
 from transformers import AlbertModel, BertModel, RobertaModel
 
-from .attention import AttentionScorer
-from .smiles_utils import generate_atom_mapped_reaction_atoms, process_reaction
-from .tokenization_smiles import SmilesTokenizer
+from attention import AttentionScorer
+from smiles_utils import generate_atom_mapped_reaction_atoms, process_reaction
+from tokenization_smiles import SmilesTokenizer
 
 MODEL_TYPE_DICT = {"bert": BertModel, "albert": AlbertModel, "roberta": RobertaModel}
 

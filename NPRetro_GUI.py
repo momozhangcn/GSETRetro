@@ -65,7 +65,6 @@ class TableModel(QtCore.QAbstractTableModel):
             return (self._data.axes[0][col])
         return None
 
-
 class Thread_MultiStepPlanning(QThread):
     _r = QtCore.pyqtSignal(pd.DataFrame)
 
@@ -84,6 +83,18 @@ class Thread_MultiStepPlanning(QThread):
                     self.beam_size, self.exp_topk,self.iterations, self.route_topk,  self.device, self.send_model_path)
 
         self._r.emit(pathway_list)
+
+
+class Thread_PredictADMET(QThread):
+    _r = QtCore.pyqtSignal(pd.DataFrame)
+
+    def __init__(self, smiles_list):
+        super().__init__()
+        self.smiles_list = smiles_list
+
+    def run(self):
+        admet_list = utils.predict_compound_ADMET_property(smiles_list=self.smiles_list)
+        self._r.emit(admet_list)
 
 class NPRetro_App(QMainWindow, Ui_MainWindow):
 
@@ -105,7 +116,7 @@ class NPRetro_App(QMainWindow, Ui_MainWindow):
         self.PubchemSketcherUI = PubchemSketcherUI()
         self.ChemicalImageUI = ChemicalImageUI()
         self.ParametersUI = ParametersUI()
-        #layout1
+        # layout input area
         self.pushButton_chem_add.clicked.connect(self.add_precursor_to_list)
         self.pushButton_chem_upload.clicked.connect(self.upload_precursor_to_list)
         self.pushButton_chem_draw.clicked.connect(self.PubchemSketcherUI.show)
@@ -120,15 +131,15 @@ class NPRetro_App(QMainWindow, Ui_MainWindow):
         # save buttom
         self.pushButton_save.clicked.connect(self.save_as_file)  # new add here
         # data generated in the process
-        #
         self.pathway_list = None
         self.Thread_MultiStepPlanning = None
+        self.ADMET_list = None
         self.Thread_ADMET = None
         # 'Retrosynthetic Route Prediction' area functions
         self.tableWidget_RouteList.setSortingEnabled(True)
         self.tableWidget_RouteList.cellClicked.connect(self.fill_table_single_route_list)
         # 'Precursor Compound' area functions functions
-        # self.tableWidget_CompoundsList.cellClicked.connect(self.fill_AMDET_table_click_compound)
+        self.tableWidget_Compounds.cellClicked.connect(self.fill_AMDET_table_click_compound)
 
     def load_model_path(self):
         options = QtWidgets.QFileDialog.Options()
@@ -206,19 +217,22 @@ class NPRetro_App(QMainWindow, Ui_MainWindow):
                 else:
                     item = QtWidgets.QTableWidgetItem(str(data.iloc[i, j]))
                 widget.setItem(i, j, item)
-
+    def _set_AMDET_list(self, msg):
+        self.ADMET_list = msg
 
     def _set_pathway_list(self, msg):
         self.pathway_list = msg
 
     def _clear_all(self):
         self.pathway_list = None
+        self.ADMET_list = None
         # clear all data
         self.tableWidget_RouteList.clear()
-        self.tableWidget_CompoundsList.clear()
-        self.tableWidget_EC.clear()
+        self.tableWidget_Compounds.clear()
+        self.tableWidget_EC_Number.clear()
         self.label_7.clear()
 
+    def _set_disable(self):
         # setDisabled all pushButton
         self.pushButton_chem_add.setDisabled(True)
         self.pushButton_chem_upload.setDisabled(True)
@@ -287,8 +301,8 @@ class NPRetro_App(QMainWindow, Ui_MainWindow):
         file_name = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(10))
         Draw.MolToFile(precursor_mol, f'data/temp_data/{file_name}.png')
         self.ChemicalImageUI.label_chem_image.setPixmap(QPixmap(f'data/temp_data/{file_name}.png'))
-####################################################################
-
+    ####################################################################
+    ## 01. Multi_Step_Planning function
     def do_multi_step_planning(self):
 
         precursor_smiles_list = [self.listWidget_chem_list.item(x).text() for x in
@@ -307,6 +321,8 @@ class NPRetro_App(QMainWindow, Ui_MainWindow):
         model_path = self.model_path
 
         self._clear_all()
+        self._set_disable()
+
         self.progressBar.setValue(30)
         self.progressBar.setFormat('Multi-step Planing')
         print('>>> Multi-step Planing')
@@ -344,6 +360,7 @@ class NPRetro_App(QMainWindow, Ui_MainWindow):
         return smi_lst, pure_route
 
     def fill_table_route_prediction(self):
+        self._set_disable()
         if self.pathway_list.empty:
             self.ErrorMsg('No valid prediction for current molecule')
             self.progressBar.setValue(100)
@@ -351,19 +368,67 @@ class NPRetro_App(QMainWindow, Ui_MainWindow):
             self._set_finished()
         else:
             raw_route_lst = list(self.pathway_list['pathway_prediction']) # GUI/multi_step_plan_4GUI.py
+            # 1/2 fill tableWidget_RouteList
             df_routeList = pd.DataFrame({' ': raw_route_lst})
             self._set_table_widget(self.tableWidget_RouteList, df_routeList)
             self.tableWidget_RouteList.setCurrentCell(0, 0)
-            self.progressBar.setValue(100)
-            self.progressBar.setFormat('Ready')
-            self._set_finished()
-            self.InforMsg('Finished')
+            # 2/2 do predict_ADMET for all_smiles
+            full_smi_lst = []
+            for r in raw_route_lst:
+                smi_lst, _route = self.get_pure_route_from_pred_full_route(r)
+                for smi in smi_lst:
+                    if smi not in full_smi_lst and smi.find('kegg') == -1:
+                        full_smi_lst.append(smi)
+            self.predict_ADMET(full_smi_lst)
 
+    ####################################################################
+    ## 02. ADMET function
+    def predict_ADMET(self, full_smi_lst):
+        self.progressBar.setValue(70)
+        self.progressBar.setFormat('Predicting AMDET')
+        self.Thread_PredictAMDET = Thread_PredictADMET(full_smi_lst)
+        self.Thread_PredictAMDET._r.connect(self._set_AMDET_list)
+        self.Thread_PredictAMDET.start()
+        self.Thread_PredictAMDET.finished.connect(self.finish_pop_up)
+        # finished
+    def finish_pop_up(self):
+        self.progressBar.setValue(100)
+        self.progressBar.setFormat('Ready')
+        self._set_finished()
+        self.InforMsg('Finished')
+
+    def fill_AMDET_table_click_compound(self):
+        index = self.tableWidget_Compounds.currentRow()
+        current_smiles = self.tableWidget_Compounds.item(index, 0).text()
+        self.fill_AMDET_table(current_smiles)
+    def fill_AMDET_table(self, current_smiles=None):
+        if current_smiles.find('kegg') == -1:
+            Physicochemical = utils.refine_compound_ADMET_property(self.ADMET_list, current_smiles,
+                                                                   property_class='Physicochemical')
+            Absorption = utils.refine_compound_ADMET_property(self.ADMET_list, current_smiles, property_class='Absorption')
+            Distribution = utils.refine_compound_ADMET_property(self.ADMET_list, current_smiles,
+                                                                property_class='Distribution')
+            Metabolism = utils.refine_compound_ADMET_property(self.ADMET_list, current_smiles, property_class='Metabolism')
+            Excretion = utils.refine_compound_ADMET_property(self.ADMET_list, current_smiles, property_class='Excretion')
+            Toxicity = utils.refine_compound_ADMET_property(self.ADMET_list, current_smiles, property_class='Toxicity')
+
+            self.tableView_prop_1.setModel(TableModel(Physicochemical))
+            self.tableView_prop_2.setModel(TableModel(Absorption))
+            self.tableView_prop_3.setModel(TableModel(Distribution))
+            self.tableView_prop_4.setModel(TableModel(Metabolism))
+            self.tableView_prop_5.setModel(TableModel(Excretion))
+            self.tableView_prop_6.setModel(TableModel(Toxicity))
+        self.progressBar.setValue(100)
+        self.progressBar.setFormat('Ready')
+        self._set_finished()
+    ####################################################################
+    ## 03. Show selected single route:Compounds & EC Number Prediction & visualization
     def fill_table_single_route_list(self):
         # show compounds and synthesis-path for selected pathway
-        # 0. get
+        # 0. get current/selected pathway
         index = self.tableWidget_RouteList.currentRow()
         get_full_route = self.tableWidget_RouteList.item(index, 0).text()
+        self._set_disable()
         # 1. analysis
         all_paths = utils.find_all_paths(get_full_route)
         all_unique_mole_node = list(set([element for sublist in all_paths for element in sublist]))
@@ -375,16 +440,14 @@ class NPRetro_App(QMainWindow, Ui_MainWindow):
             self.progressBar.setValue(30)
             self.progressBar.setFormat('EC Number Predicting')
             df_all_ec, rxn_EC_dict = utils.predict_rxns_EC_number(get_full_route)
-            self._set_table_widget(self.tableWidget_EC, df_all_ec)
+            self._set_table_widget(self.tableWidget_EC_Number, df_all_ec)
         else:
-            self.tableWidget_EC.clear()
-
-
+            self.tableWidget_EC_Number.clear()
         # 3. get_pure_route_from_pred_full_route
         smi_lst, route = self.get_pure_route_from_pred_full_route(get_full_route)
+        self.fill_AMDET_table(smi_lst[0])
         df_smi_lst = pd.DataFrame({' ': smi_lst})
-        self._set_table_widget(self.tableWidget_CompoundsList, df_smi_lst)
-
+        self._set_table_widget(self.tableWidget_Compounds, df_smi_lst)
         # 4. draw pathway
         node_id_dict = {}
         for node_id in range(len(all_unique_mole_node)):
@@ -449,7 +512,7 @@ class NPRetro_App(QMainWindow, Ui_MainWindow):
         self.progressBar.setFormat('Ready')
         self._set_finished()
 
-# pyuic5 GUI/ui/NPDemo.ui -o GUI/uic/NPDemo.py
+# pyuic5 GUI/ui/NPRetroMainWindow.ui -o GUI/uic/NPRetroMainWindow.py
 
 if __name__ == '__main__':
     import sys

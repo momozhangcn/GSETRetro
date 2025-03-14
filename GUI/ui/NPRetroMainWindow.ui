@@ -6,15 +6,15 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1017</width>
-    <height>710</height>
+    <width>985</width>
+    <height>642</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QGridLayout" name="gridLayout_8" rowstretch="1,1,1,1" columnstretch="1,1,1" rowminimumheight="1,1,1,1" columnminimumwidth="1,1,1">
+   <layout class="QGridLayout" name="gridLayout_8" rowstretch="1,1,1,1" columnstretch="4,5,4">
     <property name="leftMargin">
      <number>9</number>
     </property>
@@ -33,24 +33,6 @@
     <property name="verticalSpacing">
      <number>3</number>
     </property>
-    <item row="0" column="0">
-     <widget class="QLabel" name="label_6">
-      <property name="font">
-       <font>
-        <family>Times New Roman</family>
-        <pointsize>16</pointsize>
-        <italic>true</italic>
-        <bold>true</bold>
-       </font>
-      </property>
-      <property name="text">
-       <string>NP Retrosynthesis Screening</string>
-      </property>
-      <property name="scaledContents">
-       <bool>false</bool>
-      </property>
-     </widget>
-    </item>
     <item row="1" column="2" rowspan="2">
      <layout class="QVBoxLayout" name="verticalLayout_5_ShowRoute" stretch="0,0">
       <property name="spacing">
@@ -100,8 +82,8 @@
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>325</width>
-           <height>596</height>
+           <width>290</width>
+           <height>528</height>
           </rect>
          </property>
          <property name="sizePolicy">
@@ -147,6 +129,177 @@
        </widget>
       </item>
      </layout>
+    </item>
+    <item row="0" column="1">
+     <widget class="QPushButton" name="pushButton_setting">
+      <property name="font">
+       <font>
+        <family>Times New Roman</family>
+        <pointsize>12</pointsize>
+       </font>
+      </property>
+      <property name="text">
+       <string>Setting</string>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="1">
+     <layout class="QVBoxLayout" name="verticalLayout_4_ADMET">
+      <item>
+       <widget class="QLabel" name="label_4">
+        <property name="font">
+         <font>
+          <family>Times New Roman</family>
+          <pointsize>11</pointsize>
+         </font>
+        </property>
+        <property name="text">
+         <string> ADMET Property</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QTabWidget" name="tabWidget_3">
+        <property name="font">
+         <font>
+          <family>Times New Roman</family>
+          <pointsize>10</pointsize>
+         </font>
+        </property>
+        <property name="currentIndex">
+         <number>0</number>
+        </property>
+        <widget class="QWidget" name="widget">
+         <property name="font">
+          <font>
+           <family>Times New Roman</family>
+           <pointsize>10</pointsize>
+          </font>
+         </property>
+         <attribute name="title">
+          <string>Physicochemical</string>
+         </attribute>
+         <layout class="QGridLayout" name="gridLayout_4">
+          <item row="0" column="0">
+           <widget class="QTableView" name="tableView_prop_1">
+            <attribute name="horizontalHeaderDefaultSectionSize">
+             <number>250</number>
+            </attribute>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+        <widget class="QWidget" name="tab_4">
+         <attribute name="title">
+          <string>Absorption</string>
+         </attribute>
+         <layout class="QGridLayout" name="gridLayout_5">
+          <item row="0" column="0">
+           <widget class="QTableView" name="tableView_prop_2">
+            <attribute name="horizontalHeaderDefaultSectionSize">
+             <number>250</number>
+            </attribute>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+        <widget class="QWidget" name="tab">
+         <attribute name="title">
+          <string>Distribution</string>
+         </attribute>
+         <layout class="QGridLayout" name="gridLayout_6">
+          <item row="0" column="0">
+           <widget class="QTableView" name="tableView_prop_3">
+            <attribute name="horizontalHeaderDefaultSectionSize">
+             <number>250</number>
+            </attribute>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+        <widget class="QWidget" name="tab_5">
+         <attribute name="title">
+          <string>Metabolism</string>
+         </attribute>
+         <layout class="QGridLayout" name="gridLayout_7">
+          <item row="0" column="0">
+           <widget class="QTableView" name="tableView_prop_4">
+            <attribute name="horizontalHeaderDefaultSectionSize">
+             <number>250</number>
+            </attribute>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+        <widget class="QWidget" name="tab_6">
+         <attribute name="title">
+          <string>Excretion</string>
+         </attribute>
+         <layout class="QGridLayout" name="gridLayout_10">
+          <item row="0" column="0">
+           <widget class="QTableView" name="tableView_prop_5">
+            <attribute name="horizontalHeaderDefaultSectionSize">
+             <number>250</number>
+            </attribute>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+        <widget class="QWidget" name="tab_7">
+         <attribute name="title">
+          <string>Toxicity</string>
+         </attribute>
+         <layout class="QGridLayout" name="gridLayout_11">
+          <item row="0" column="0">
+           <widget class="QTableView" name="tableView_prop_6">
+            <attribute name="horizontalHeaderDefaultSectionSize">
+             <number>250</number>
+            </attribute>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item row="0" column="0">
+     <widget class="QLabel" name="label_6">
+      <property name="font">
+       <font>
+        <family>Times New Roman</family>
+        <pointsize>16</pointsize>
+        <italic>true</italic>
+        <bold>true</bold>
+       </font>
+      </property>
+      <property name="text">
+       <string>NP Retrosynthesis Screening</string>
+      </property>
+      <property name="scaledContents">
+       <bool>false</bool>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="2">
+     <widget class="QPushButton" name="pushButton_save">
+      <property name="font">
+       <font>
+        <family>Times New Roman</family>
+        <pointsize>12</pointsize>
+       </font>
+      </property>
+      <property name="text">
+       <string>Save</string>
+      </property>
+     </widget>
+    </item>
+    <item row="3" column="2">
+     <widget class="QProgressBar" name="progressBar">
+      <property name="value">
+       <number>24</number>
+      </property>
+     </widget>
     </item>
     <item row="1" column="0">
      <layout class="QVBoxLayout" name="verticalLayout_1_Input">
@@ -246,95 +399,6 @@
       </item>
      </layout>
     </item>
-    <item row="0" column="2">
-     <widget class="QPushButton" name="pushButton_save">
-      <property name="font">
-       <font>
-        <family>Times New Roman</family>
-        <pointsize>12</pointsize>
-       </font>
-      </property>
-      <property name="text">
-       <string>Save</string>
-      </property>
-     </widget>
-    </item>
-    <item row="3" column="2">
-     <widget class="QProgressBar" name="progressBar">
-      <property name="value">
-       <number>24</number>
-      </property>
-     </widget>
-    </item>
-    <item row="0" column="1">
-     <widget class="QPushButton" name="pushButton_setting">
-      <property name="font">
-       <font>
-        <family>Times New Roman</family>
-        <pointsize>12</pointsize>
-       </font>
-      </property>
-      <property name="text">
-       <string>Setting</string>
-      </property>
-     </widget>
-    </item>
-    <item row="1" column="1">
-     <layout class="QVBoxLayout" name="verticalLayout_4_EC">
-      <item>
-       <widget class="QLabel" name="label_4">
-        <property name="font">
-         <font>
-          <family>Times New Roman</family>
-          <pointsize>11</pointsize>
-         </font>
-        </property>
-        <property name="text">
-         <string> EC Number Prediction</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QTableWidget" name="tableWidget_EC"/>
-      </item>
-     </layout>
-    </item>
-    <item row="2" column="1" rowspan="2">
-     <layout class="QVBoxLayout" name="verticalLayout_3_CompoundsList">
-      <item>
-       <widget class="QLabel" name="label_3">
-        <property name="font">
-         <font>
-          <family>Times New Roman</family>
-          <pointsize>11</pointsize>
-         </font>
-        </property>
-        <property name="text">
-         <string> Compounds in Selected Pathway</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QTableWidget" name="tableWidget_CompoundsList">
-        <property name="font">
-         <font>
-          <family>Times New Roman</family>
-          <pointsize>10</pointsize>
-         </font>
-        </property>
-        <property name="selectionBehavior">
-         <enum>QAbstractItemView::SelectRows</enum>
-        </property>
-        <attribute name="verticalHeaderShowSortIndicator" stdset="0">
-         <bool>true</bool>
-        </attribute>
-        <attribute name="verticalHeaderStretchLastSection">
-         <bool>false</bool>
-        </attribute>
-       </widget>
-      </item>
-     </layout>
-    </item>
     <item row="2" column="0" rowspan="2">
      <layout class="QVBoxLayout" name="verticalLayout_2_RouteList">
       <item>
@@ -353,6 +417,50 @@
       </item>
       <item>
        <widget class="QTableWidget" name="tableWidget_RouteList"/>
+      </item>
+     </layout>
+    </item>
+    <item row="2" column="1" rowspan="2">
+     <layout class="QVBoxLayout" name="verticalLayout_3_SingleRoute">
+      <item>
+       <widget class="QLabel" name="label_3">
+        <property name="font">
+         <font>
+          <family>Times New Roman</family>
+          <pointsize>11</pointsize>
+         </font>
+        </property>
+        <property name="text">
+         <string> Selected Pathway</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QTabWidget" name="tabWidget_2">
+        <property name="currentIndex">
+         <number>0</number>
+        </property>
+        <widget class="QWidget" name="tab_9">
+         <attribute name="title">
+          <string>Compounds</string>
+         </attribute>
+         <layout class="QGridLayout" name="gridLayout">
+          <item row="0" column="0">
+           <widget class="QTableWidget" name="tableWidget_Compounds"/>
+          </item>
+         </layout>
+        </widget>
+        <widget class="QWidget" name="tab_8">
+         <attribute name="title">
+          <string>EC Number Prediction</string>
+         </attribute>
+         <layout class="QGridLayout" name="gridLayout_3">
+          <item row="0" column="0">
+           <widget class="QTableWidget" name="tableWidget_EC_Number"/>
+          </item>
+         </layout>
+        </widget>
+       </widget>
       </item>
      </layout>
     </item>

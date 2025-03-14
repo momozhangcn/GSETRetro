@@ -98,11 +98,13 @@ Run the following command to evaluate the planned paths of the test molecules:
 python eval.py ${save_file}
 ```
 ## 4.GUI usage
+Since our EC number function involves multiple pretrained models, you need to download and unzip CLAIRE.zip (from [Google Drive](https://drive.google.com/drive/folders/1tHuqdjdu2kxQChS2x-z1n3Hnhf-0rDBt)) ，</br>
+and place it in the `GSETRetro\GUI` folder to fully utilize the GUI.
 1. Run `python NPRetro_GUI.py` to open the GUI interface.</br>
 2. Click the `Setting` button to modify the hyperparameters. The default hyperparameters are those used in the paper.</br>
 Pls download our trained model first, if you place the model file (.pt) at a random path instead of following the complex directory structure mentioned above, you can specify its location through the `Setting-Upload` option.
 3. Enter the target molecule in the `Input` field and click the `Add` button to add it to the `List`.</br>
 ![GUI_usage_1/2](GUI/GUI_usage_1.png)
-3. Switch to the `List` field and click the `Predict` button to perform the routes prediction.</br>
+4. Switch to the `List` field and click the `Predict` button to perform the routes prediction.</br>
 If predicted routes are obtained, click random route to view the details.</br>
 ![GUI_usage_2/2](GUI/GUI_usage_2.png)

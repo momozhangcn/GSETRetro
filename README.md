@@ -1,4 +1,5 @@
 # GSETRetro
+## Apologies for the notice: This project is no longer updated or maintained.&.Hope everything works out for us in life.
 ## 0. Requirements
 Create a virtual environment and install the dependencies.<br>
 Install pytorch with the cuda version that fits your device.<br>
